@@ -7,6 +7,8 @@ from flask import Flask, request, jsonify, render_template, session, redirect, u
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import torch
+import torch.nn as nn
+import timm
 import numpy as np
 from PIL import Image
 from torchvision import transforms
@@ -29,6 +31,93 @@ load_dotenv()
 
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent))
+
+# ============================================
+# MODEL ARCHITECTURE - FedFusionNetPlus
+# ============================================
+class FedFusionNetPlus(nn.Module):
+    """
+    FedFusionNet++ - Hybrid Vision Transformer for Oral Cancer Detection
+    
+    Architecture Components:
+    1. Swin-ViT-Small (327 params) → 768-dim features
+    2. CrossViT-15 (336 params) → 576-dim features (192+384 dual-branch)
+    3. SE Fusion (2 params) → Channel attention (1344→84→1344)
+    4. Classification Head (6 params) → 2-layer MLP (1344→256→2)
+    
+    Input: 256×256 RGB images (divisible by 32 for Swin downsampling)
+    Output: Binary classification (Normal vs OSCC)
+    """
+    
+    def __init__(self, num_classes=2):
+        super().__init__()
+        
+        # Backbone 1: Swin Transformer Small
+        # Note: Using 224 as base, will accept 240 with interpolation
+        self.swin = timm.create_model(
+            'swin_small_patch4_window7_224',
+            pretrained=False,
+            num_classes=0,
+            img_size=240  # Use 240 to match CrossViT and checkpoint
+        )
+        
+        # Backbone 2: CrossViT-15 (dual-branch architecture)
+        # Uses 240x240 images (matches checkpoint training)
+        self.crossvit = timm.create_model(
+            'crossvit_15_240',
+            pretrained=False,
+            num_classes=0
+        )
+        
+        swin_dim = 768
+        crossvit_dim = 576  # 192 (small branch) + 384 (large branch)
+        fused_dim = 1344    # 768 + 576
+        
+        # SE Fusion: Squeeze-and-Excitation channel attention
+        self.se_fusion = nn.Module()
+        self.se_fusion.se = nn.Sequential(
+            nn.Linear(fused_dim, fused_dim // 16),  # 1344 → 84
+            nn.GELU(),
+            nn.Linear(fused_dim // 16, fused_dim),  # 84 → 1344
+            nn.Sigmoid()
+        )
+        
+        # Classification Head: 2-layer MLP
+        self.head = nn.Sequential(
+            nn.LayerNorm(fused_dim),         # Normalize fused features
+            nn.Linear(fused_dim, 256),       # 1344 → 256
+            nn.GELU(),
+            nn.Dropout(0.5),
+            nn.Linear(256, num_classes)      # 256 → 2
+        )
+        
+        # Auxiliary heads (not used in inference, kept for checkpoint compatibility)
+        self.aux_swin = nn.Sequential(
+            nn.LayerNorm(swin_dim),
+            nn.Linear(swin_dim, num_classes)
+        )
+        
+        self.aux_crossvit = nn.Sequential(
+            nn.LayerNorm(crossvit_dim),
+            nn.Linear(crossvit_dim, num_classes)
+        )
+    
+    def forward(self, x):
+        """Forward pass for inference"""
+        # Both backbones use 240x240 (matches checkpoint training)
+        swin_feat = self.swin(x)  # [B, 768]
+        crossvit_feat = self.crossvit(x)  # [B, 576]
+        
+        # Concatenate features
+        fused = torch.cat([swin_feat, crossvit_feat], dim=1)  # [B, 1344]
+        
+        # Apply SE attention
+        se_weight = self.se_fusion.se(fused)
+        fused = fused * se_weight
+        
+        # Classification
+        logits = self.head(fused)  # [B, 2]
+        return logits
 
 # Set template and static folders to frontend
 app = Flask(__name__, 
@@ -119,9 +208,7 @@ def download_model_from_hf(filename):
 def load_cnn_model():
     """Load Stage-1 CNN Model (SWIN-ViT + Cross-ViT trained on Kaggle)"""
     try:
-        from backend.model.fedfusionnet_simple import FedFusionNetPlus
-        
-        # Create model (no pretrained weights, we'll load your trained model)
+        # Create model
         model = FedFusionNetPlus(num_classes=2)
         
         # Try local path first

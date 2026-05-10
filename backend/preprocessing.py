@@ -249,10 +249,9 @@ def preprocess_image_for_prediction(image, apply_quality_control=True):
     # ═══════════════════════════════════════════════════════
     # STEP 3: RESIZE & NORMALIZE FOR MODEL
     # ═══════════════════════════════════════════════════════
-    # CRITICAL: SWIN Transformer requires dimensions divisible by 32
-    # Using 224x224 (standard ImageNet size, divisible by 32)
+    # Using 240×240 to match checkpoint training (both Swin and CrossViT)
     transform = transforms.Compose([
-        transforms.Resize((224, 224)),  # Changed from 240 to 224 (divisible by 32)
+        transforms.Resize((240, 240)),  # Match checkpoint training size
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])

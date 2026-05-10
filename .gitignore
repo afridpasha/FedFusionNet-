@@ -8,10 +8,14 @@ env/
 venv/
 ENV/
 *.egg-info/
+dist/
+build/
 
-# Reports (generated at runtime)
+# Generated Reports
 backend/reports/*.pdf
 backend/reports/*.json
+reports/*.pdf
+reports/*.json
 
 # Logs
 *.log
@@ -20,6 +24,8 @@ logs/
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
 
 # OS
 .DS_Store
@@ -28,13 +34,19 @@ Thumbs.db
 # Environment
 .env
 .env.local
+.env.*.local
 
 # Temporary
 *.tmp
 *.temp
 
-# Large files (datasets and models)
+# Large files - DO NOT PUSH
 datasets/
-models/
-uploads/
-reports/
+models_cache/
+backend/models_cache/
+uploads/*
+!uploads/.gitkeep
+
+# Keep directory structure
+!backend/reports/.gitkeep
+!reports/.gitkeep
