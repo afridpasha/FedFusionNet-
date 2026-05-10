@@ -95,8 +95,27 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # ============================================
-# MODEL LOADING - HYBRID SYSTEM
+# MODEL LOADING - HYBRID SYSTEM WITH HF MODEL HUB
 # ============================================
+def download_model_from_hf(filename):
+    """Download model from Hugging Face Model Hub"""
+    try:
+        from huggingface_hub import hf_hub_download
+        
+        MODEL_REPO_ID = "afridpasha1983/fedfusionnet-models"
+        
+        print(f"[HF] Downloading {filename} from Model Hub...")
+        model_path = hf_hub_download(
+            repo_id=MODEL_REPO_ID,
+            filename=filename,
+            cache_dir="./models_cache"
+        )
+        print(f"[HF] Downloaded: {model_path}")
+        return model_path
+    except Exception as e:
+        print(f"[HF] Failed to download {filename}: {e}")
+        return None
+
 def load_cnn_model():
     """Load Stage-1 CNN Model (SWIN-ViT + Cross-ViT trained on Kaggle)"""
     try:
@@ -105,18 +124,27 @@ def load_cnn_model():
         # Create model (no pretrained weights, we'll load your trained model)
         model = FedFusionNetPlus(num_classes=2)
         
-        # Load your trained weights from Kaggle
+        # Try local path first
         model_path = Path(__file__).parent.parent / 'models' / 'hetfusionnet_v2_FINAL.pth'
-        if model_path.exists():
-            state_dict = torch.load(model_path, map_location='cpu')
-            model.load_state_dict(state_dict, strict=False)
-            model.eval()
-            print(f"[OK] Stage-1 CNN model loaded: {model_path.name}")
-            print(f"[OK] Architecture: SWIN-ViT + Cross-ViT")
-            return model
-        else:
-            print(f"[ERROR] CNN model not found: {model_path}")
-            return None
+        
+        # If not found locally, download from Hugging Face
+        if not model_path.exists():
+            print("[HF] Model not found locally, downloading from Hugging Face...")
+            downloaded_path = download_model_from_hf('hetfusionnet_v2_FINAL.pth')
+            if downloaded_path:
+                model_path = Path(downloaded_path)
+            else:
+                print(f"[ERROR] Failed to download CNN model")
+                return None
+        
+        # Load model weights
+        state_dict = torch.load(model_path, map_location='cpu')
+        model.load_state_dict(state_dict, strict=False)
+        model.eval()
+        print(f"[OK] Stage-1 CNN model loaded: {model_path.name}")
+        print(f"[OK] Architecture: SWIN-ViT + Cross-ViT")
+        return model
+        
     except Exception as e:
         print(f"[ERROR] Error loading CNN model: {e}")
         import traceback
@@ -128,13 +156,23 @@ def load_tabular_model():
     try:
         from backend.model.tabular_model import OralCancerTabularModel
         
+        # Try local path first
         model_path = Path(__file__).parent.parent / 'models' / 'stage2_tabular_model.pkl'
-        if model_path.exists():
-            tabular = OralCancerTabularModel(model_path=str(model_path))
-            return tabular
-        else:
-            print(f"⚠ Tabular model not found: {model_path}")
-            return None
+        
+        # If not found locally, download from Hugging Face
+        if not model_path.exists():
+            print("[HF] Model not found locally, downloading from Hugging Face...")
+            downloaded_path = download_model_from_hf('stage2_tabular_model.pkl')
+            if downloaded_path:
+                model_path = Path(downloaded_path)
+            else:
+                print(f"⚠ Failed to download tabular model")
+                return None
+        
+        # Load model
+        tabular = OralCancerTabularModel(model_path=str(model_path))
+        return tabular
+        
     except Exception as e:
         print(f"⚠ Error loading tabular model: {e}")
         return None
