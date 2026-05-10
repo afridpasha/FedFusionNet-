@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | FedFusionNet++</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-global.css') }}">
+    
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 25px;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <nav class="bg-white bg-opacity-10 backdrop-blur-lg border-b border-white border-opacity-20">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <i class="fas fa-hospital text-white text-3xl"></i>
+                    <div>
+                        <h1 class="text-white text-2xl font-bold">FedFusionNet++</h1>
+                        <p class="text-white text-sm opacity-80">{{ hospital_name }}</p>
+                    </div>
+                </div>
+                
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="/dashboard" class="text-white hover:text-gray-200 font-semibold transition border-b-2 border-white">
+                        <i class="fas fa-home mr-2"></i>Dashboard
+                    </a>
+                    <a href="/analytics" class="text-white hover:text-gray-200 font-semibold transition">
+                        <i class="fas fa-chart-line mr-2"></i>Analytics
+                    </a>
+                    <a href="/history" class="text-white hover:text-gray-200 font-semibold transition">
+                        <i class="fas fa-history mr-2"></i>History
+                    </a>
+                    <a href="/tests" class="text-white hover:text-gray-200 font-semibold transition">
+                        <i class="fas fa-flask mr-2"></i>Tests
+                    </a>
+                    <a href="/logout" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold transition">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </a>
+                </div>
+                
+                <!-- Mobile Menu Button -->
+                <button onclick="toggleMobileMenu()" class="md:hidden text-white text-2xl focus:outline-none">
+                    <i class="fas fa-bars" id="menuIcon"></i>
+                </button>
+            </div>
+            
+            <!-- Mobile Menu Dropdown -->
+            <div id="mobileMenu" class="hidden md:hidden mt-4 space-y-2">
+                <a href="/dashboard" class="block text-white hover:bg-white hover:bg-opacity-20 px-4 py-3 rounded-lg font-semibold transition border-b-2 border-white">
+                    <i class="fas fa-home mr-2"></i>Dashboard
+                </a>
+                <a href="/analytics" class="block text-white hover:bg-white hover:bg-opacity-20 px-4 py-3 rounded-lg font-semibold transition">
+                    <i class="fas fa-chart-line mr-2"></i>Analytics
+                </a>
+                <a href="/history" class="block text-white hover:bg-white hover:bg-opacity-20 px-4 py-3 rounded-lg font-semibold transition">
+                    <i class="fas fa-history mr-2"></i>History
+                </a>
+                <a href="/tests" class="block text-white hover:bg-white hover:bg-opacity-20 px-4 py-3 rounded-lg font-semibold transition">
+                    <i class="fas fa-flask mr-2"></i>Tests
+                </a>
+                <a href="/logout" class="block bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-lg font-semibold transition text-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+    
+    <script>
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            const icon = document.getElementById('menuIcon');
+            
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-times');
+            } else {
+                menu.classList.add('hidden');
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+            }
+        }
+    </script>
+    
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <div class="glass-card p-8 mb-8">
+            <h2 class="text-4xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-home text-purple-600"></i> Welcome to Your Dashboard
+            </h2>
+            <p class="text-gray-600 text-lg">
+                Access AI-powered oral cancer detection with privacy-preserving federated learning
+            </p>
+        </div>
+        
+        <div class="grid md:grid-cols-4 gap-6 mb-8">
+            <div class="stat-card">
+                <i class="fas fa-chart-line text-4xl mb-3"></i>
+                <h3 class="text-3xl font-bold">89%</h3>
+                <p class="text-sm opacity-90">Model Accuracy</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-shield-alt text-4xl mb-3"></i>
+                <h3 class="text-3xl font-bold">ε=3.0</h3>
+                <p class="text-sm opacity-90">Privacy Level</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-network-wired text-4xl mb-3"></i>
+                <h3 class="text-3xl font-bold">3</h3>
+                <p class="text-sm opacity-90">Federated Clients</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-check-circle text-4xl mb-3"></i>
+                <h3 class="text-3xl font-bold">Active</h3>
+                <p class="text-sm opacity-90">System Status</p>
+            </div>
+        </div>
+        
+        <div class="grid md:grid-cols-2 gap-8">
+            <div class="glass-card p-8">
+                <div class="text-center">
+                    <i class="fas fa-flask text-6xl text-purple-600 mb-4"></i>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-3">Available Tests</h3>
+                    <p class="text-gray-600 mb-6">
+                        Browse and select from our AI-powered diagnostic tests
+                    </p>
+                    <a href="/tests" class="inline-block bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:shadow-2xl transition transform hover:scale-105">
+                        <i class="fas fa-list mr-2"></i>View All Tests
+                    </a>
+                </div>
+            </div>
+            
+            <div class="glass-card p-8">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-info-circle text-purple-600"></i> Model Information
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <span class="font-semibold text-gray-700">Architecture:</span>
+                        <span class="text-gray-600">FedFusionNet++</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <span class="font-semibold text-gray-700">Algorithm:</span>
+                        <span class="text-gray-600">SCAFFOLD + FedProx</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <span class="font-semibold text-gray-700">Parameters:</span>
+                        <span class="text-gray-600">~25M</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <span class="font-semibold text-gray-700">Privacy:</span>
+                        <span class="text-green-600 font-semibold">
+                            <i class="fas fa-lock"></i> ε=3.0 DP
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

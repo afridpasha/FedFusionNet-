@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediction | FedFusionNet++</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-global.css') }}">
+    
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <nav class="bg-white bg-opacity-10 backdrop-blur-lg border-b border-white border-opacity-20">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <a href="/dashboard" class="text-white hover:text-gray-200">
+                        <i class="fas fa-arrow-left text-2xl"></i>
+                    </a>
+                    <h1 class="text-white text-2xl font-bold">Oral Cancer Detection</h1>
+                </div>
+                
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="/dashboard" class="text-white hover:text-gray-200 font-semibold transition">
+                        <i class="fas fa-home mr-2"></i>Dashboard
+                    </a>
+                    <a href="/analytics" class="text-white hover:text-gray-200 font-semibold transition">
+                        <i class="fas fa-chart-line mr-2"></i>Analytics
+                    </a>
+                    <a href="/history" class="text-white hover:text-gray-200 font-semibold transition">
+                        <i class="fas fa-history mr-2"></i>History
+                    </a>
+                    <span class="text-white font-semibold">{{ hospital_name }}</span>
+                </div>
+                
+                <!-- Mobile Menu Button -->
+                <button onclick="toggleMobileMenu()" class="md:hidden text-white text-2xl focus:outline-none">
+                    <i class="fas fa-bars" id="menuIcon"></i>
+                </button>
+            </div>
+            
+            <!-- Mobile Menu Dropdown -->
+            <div id="mobileMenu" class="hidden md:hidden mt-4 space-y-2">
+                <a href="/dashboard" class="block text-white hover:bg-white hover:bg-opacity-20 px-4 py-3 rounded-lg font-semibold transition">
+                    <i class="fas fa-home mr-2"></i>Dashboard
+                </a>
+                <a href="/analytics" class="block text-white hover:bg-white hover:bg-opacity-20 px-4 py-3 rounded-lg font-semibold transition">
+                    <i class="fas fa-chart-line mr-2"></i>Analytics
+                </a>
+                <a href="/history" class="block text-white hover:bg-white hover:bg-opacity-20 px-4 py-3 rounded-lg font-semibold transition">
+                    <i class="fas fa-history mr-2"></i>History
+                </a>
+                <div class="text-white font-semibold px-4 py-3 bg-white bg-opacity-10 rounded-lg">
+                    <i class="fas fa-hospital mr-2"></i>{{ hospital_name }}
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <script>
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            const icon = document.getElementById('menuIcon');
+            
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-times');
+            } else {
+                menu.classList.add('hidden');
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+            }
+        }
+    </script>
+    
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <div class="grid md:grid-cols-2 gap-8">
+            <!-- Upload Section -->
+            <div class="glass-card p-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">
+                    <i class="fas fa-upload text-purple-600"></i> Upload Image
+                </h2>
+                
+                <form id="predictionForm" enctype="multipart/form-data">
+                    <div class="mb-6">
+                        <label class="block text-gray-700 font-semibold mb-2">
+                            <i class="fas fa-image mr-2"></i>Histopathology Image
+                        </label>
+                        <input type="file" id="imageFile" accept="image/*" required
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:outline-none">
+                        <img id="preview" class="mt-4 rounded-xl hidden" style="max-height: 300px;">
+                    </div>
+                    
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 mt-6">
+                        <i class="fas fa-user-md text-purple-600"></i> Patient Information
+                    </h3>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">Patient ID *</label>
+                            <input type="text" id="patientId" value="P-12345" required
+                                   class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">Age *</label>
+                            <input type="number" id="age" value="45" min="1" max="120" required
+                                   class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">Gender *</label>
+                            <select id="gender" required class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">Country *</label>
+                            <input type="text" id="country" value="India" required
+                                   class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+                        </div>
+                    </div>
+                    
+                    <h3 class="text-lg font-bold text-gray-800 mb-3 mt-4">
+                        <i class="fas fa-smoking text-red-600"></i> Lifestyle Factors
+                    </h3>
+                    <div class="grid grid-cols-4 gap-3 mb-4">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-semibold mb-1 text-center">
+                                <i class="fas fa-smoking text-red-500 text-xl mb-1"></i><br>
+                                Tobacco Use
+                            </label>
+                            <select id="tobaccoUse" class="w-full px-2 py-2 text-sm border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-semibold mb-1 text-center">
+                                <i class="fas fa-wine-bottle text-purple-500 text-xl mb-1"></i><br>
+                                Alcohol
+                            </label>
+                            <select id="alcoholConsumption" class="w-full px-2 py-2 text-sm border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-semibold mb-1 text-center">
+                                <i class="fas fa-leaf text-green-600 text-xl mb-1"></i><br>
+                                Betel Quid
+                            </label>
+                            <select id="betelQuidUse" class="w-full px-2 py-2 text-sm border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-semibold mb-1 text-center">
+                                <i class="fas fa-apple-alt text-red-400 text-xl mb-1"></i><br>
+                                Diet
+                            </label>
+                            <select id="diet" class="w-full px-2 py-2 text-sm border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+                                <option value="Low">Low</option>
+                                <option value="Moderate">Moderate</option>
+                                <option value="High">High</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <h3 class="text-lg font-bold text-gray-800 mb-3 mt-4">
+                        <i class="fas fa-virus text-orange-600"></i> Medical History
+                    </h3>
+                    <div class="grid grid-cols-5 gap-3 mb-4">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-semibold mb-1 text-center">
+                                <i class="fas fa-virus text-orange-500 text-xl mb-1"></i><br>
+                                HPV
+                            </label>
+                            <select id="hpvInfection" class="w-full px-2 py-2 text-sm border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-semibold mb-1 text-center">
+                                <i class="fas fa-users text-blue-500 text-xl mb-1"></i><br>
+                                Family History
+                            </label>
+                            <select id="familyHistory" class="w-full px-2 py-2 text-sm border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-semibold mb-1 text-center">
+                                <i class="fas fa-shield-virus text-red-500 text-xl mb-1"></i><br>
+                                Immune System
+                            </label>
+                            <select id="immuneSystem" class="w-full px-2 py-2 text-sm border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-semibold mb-1 text-center">
+                                <i class="fas fa-sun text-yellow-500 text-xl mb-1"></i><br>
+                                Sun Exposure
+                            </label>
+                            <select id="sunExposure" class="w-full px-2 py-2 text-sm border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-semibold mb-1 text-center">
+                                <i class="fas fa-tooth text-blue-400 text-xl mb-1"></i><br>
+                                Oral Hygiene
+                            </label>
+                            <select id="oralHygiene" class="w-full px-2 py-2 text-sm border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <h3 class="text-lg font-bold text-gray-800 mb-3 mt-4">
+                        <i class="fas fa-stethoscope text-blue-600"></i> Symptoms
+                    </h3>
+                    <div class="grid grid-cols-4 gap-3 mb-6">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-semibold mb-1 text-center">
+                                <i class="fas fa-mouth-open text-pink-500 text-xl mb-1"></i><br>
+                                Oral Lesions
+                            </label>
+                            <select id="oralLesions" class="w-full px-2 py-2 text-sm border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-semibold mb-1 text-center">
+                                <i class="fas fa-tint text-red-600 text-xl mb-1"></i><br>
+                                Bleeding
+                            </label>
+                            <select id="bleeding" class="w-full px-2 py-2 text-sm border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-semibold mb-1 text-center">
+                                <i class="fas fa-utensils text-orange-500 text-xl mb-1"></i><br>
+                                Swallowing
+                            </label>
+                            <select id="swallowing" class="w-full px-2 py-2 text-sm border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-semibold mb-1 text-center">
+                                <i class="fas fa-circle text-gray-400 text-xl mb-1"></i><br>
+                                Patches
+                            </label>
+                            <select id="patches" class="w-full px-2 py-2 text-sm border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button type="submit"
+                            class="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:shadow-2xl transition">
+                        <i class="fas fa-brain mr-2"></i>Analyze with AI
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Processing Status -->
+            <div id="processingSection" class="glass-card p-8 hidden">
+                <div class="text-center">
+                    <i class="fas fa-spinner fa-spin text-6xl text-purple-600 mb-4"></i>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Processing...</h2>
+                    <p class="text-gray-600">Analyzing image with AI models</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('imageFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('preview');
+                    preview.src = e.target.result;
+                    preview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('image', document.getElementById('imageFile').files[0]);
+            formData.append('Patient_ID', document.getElementById('patientId').value);
+            formData.append('Age', document.getElementById('age').value);
+            formData.append('Gender', document.getElementById('gender').value);
+            formData.append('Country', document.getElementById('country').value);
+            formData.append('Tobacco_Use', document.getElementById('tobaccoUse').value);
+            formData.append('Alcohol', document.getElementById('alcoholConsumption').value);
+            formData.append('Betel_Quid', document.getElementById('betelQuidUse').value);
+            formData.append('Diet', document.getElementById('diet').value);
+            formData.append('HPV', document.getElementById('hpvInfection').value);
+            formData.append('Family_History', document.getElementById('familyHistory').value);
+            formData.append('Immune', document.getElementById('immuneSystem').value);
+            formData.append('Sun_Exposure', document.getElementById('sunExposure').value);
+            formData.append('Oral_Hygiene', document.getElementById('oralHygiene').value);
+            formData.append('Oral_Lesions', document.getElementById('oralLesions').value);
+            formData.append('Bleeding', document.getElementById('bleeding').value);
+            formData.append('Swallowing', document.getElementById('swallowing').value);
+            formData.append('Patches', document.getElementById('patches').value);
+            
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Analyzing...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Store patient ID
+                    sessionStorage.setItem('patientId', document.getElementById('patientId').value);
+                    
+                    // Use IndexedDB for large data (supports 50MB+)
+                    // This avoids sessionStorage quota exceeded error
+                    storePredictionInIndexedDB(data).then(() => {
+                        // Redirect to results page
+                        window.location.href = '/result';
+                    }).catch(error => {
+                        console.error('IndexedDB storage failed:', error);
+                        alert('Error storing results: ' + error.message);
+                    });
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                btn.innerHTML = '<i class="fas fa-brain mr-2"></i>Analyze with AI';
+                btn.disabled = false;
+            }
+        });
+        
+        // ============================================
+        // INDEXEDDB STORAGE (for large data)
+        // ============================================
+        function storePredictionInIndexedDB(data) {
+            return new Promise((resolve, reject) => {
+                // Open IndexedDB
+                const request = indexedDB.open('FedFusionNetDB', 1);
+                
+                request.onerror = () => reject(new Error('Failed to open IndexedDB'));
+                
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains('predictions')) {
+                        db.createObjectStore('predictions', { keyPath: 'id' });
+                    }
+                };
+                
+                request.onsuccess = (event) => {
+                    const db = event.target.result;
+                    const transaction = db.transaction(['predictions'], 'readwrite');
+                    const store = transaction.objectStore('predictions');
+                    
+                    // Store complete data with timestamp
+                    const predictionData = {
+                        id: 'latest',
+                        timestamp: new Date().toISOString(),
+                        data: data  // Store EVERYTHING including XAI heatmaps
+                    };
+                    
+                    const putRequest = store.put(predictionData);
+                    
+                    putRequest.onsuccess = () => {
+                        console.log('✅ Prediction stored in IndexedDB (with XAI heatmaps)');
+                        resolve();
+                    };
+                    
+                    putRequest.onerror = () => reject(new Error('Failed to store in IndexedDB'));
+                };
+            });
+        }
+
+    </script>
+</body>
+</html>

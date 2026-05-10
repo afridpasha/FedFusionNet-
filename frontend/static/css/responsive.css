@@ -1,0 +1,150 @@
+/* 
+ * FedFusionNet++ Global Responsive Styles
+ * Mobile-first responsive design for all devices
+ */
+
+/* Base responsive settings */
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+/* Responsive containers */
+.container-responsive {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+@media (min-width: 640px) {
+    .container-responsive { padding: 0 1.5rem; }
+}
+
+@media (min-width: 1024px) {
+    .container-responsive { padding: 0 2rem; }
+}
+
+/* Responsive grid */
+.grid-responsive {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+    .grid-responsive-2 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 768px) {
+    .grid-responsive-3 { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (min-width: 1024px) {
+    .grid-responsive-4 { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Responsive buttons */
+.btn-responsive {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+}
+
+@media (min-width: 768px) {
+    .btn-responsive { padding: 0.875rem 1.75rem; font-size: 1rem; }
+}
+
+@media (min-width: 1024px) {
+    .btn-responsive { padding: 1rem 2rem; font-size: 1.0625rem; }
+}
+
+/* Responsive cards */
+.card-responsive {
+    padding: 1rem;
+    border-radius: 0.75rem;
+}
+
+@media (min-width: 768px) {
+    .card-responsive { padding: 1.5rem; border-radius: 1rem; }
+}
+
+@media (min-width: 1024px) {
+    .card-responsive { padding: 2rem; border-radius: 1.25rem; }
+}
+
+/* Hide/show utilities */
+.hide-mobile { display: none; }
+@media (min-width: 768px) {
+    .hide-mobile { display: block; }
+}
+
+.show-mobile { display: block; }
+@media (min-width: 768px) {
+    .show-mobile { display: none; }
+}
+
+/* Touch-friendly */
+@media (hover: none) and (pointer: coarse) {
+    button, a { min-height: 44px; min-width: 44px; }
+}
+
+/* Responsive images */
+.img-responsive {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Responsive tables */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Responsive modals */
+.modal-responsive {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.modal-content-responsive {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    .modal-content-responsive {
+        max-width: 80vw;
+        padding: 2.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .modal-content-responsive {
+        max-width: 70vw;
+        padding: 3rem;
+    }
+}

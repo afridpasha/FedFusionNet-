@@ -1,0 +1,59 @@
+# Core Deep Learning
+torch==2.2.0
+torchvision==0.17.0
+timm==0.9.12
+
+# Web Framework
+flask==3.0.0
+flask-cors==4.0.0
+werkzeug==3.0.1
+
+# Image Processing
+opencv-python==4.9.0.80
+pillow==10.2.0
+scikit-image==0.22.0
+
+# Scientific Computing
+numpy==1.26.3
+scipy==1.11.4
+
+# Machine Learning
+scikit-learn==1.4.0
+xgboost==2.0.3
+shap==0.44.1
+lifelines==0.28.0
+
+# Database
+pymongo==4.6.1
+dnspython==2.5.0
+
+# Utilities
+python-dotenv==1.0.0
+requests==2.31.0
+
+# PDF Generation (Optional)
+reportlab==4.0.9
+
+# ============================================
+# TIER 1 FEATURES: VLM + WSI SUPPORT
+# ============================================
+
+# Vision-Language Models (VLM) - ALL FREE!
+google-generativeai==0.8.3        # Gemini 1.5 Flash (RECOMMENDED - Best performance)
+groq==0.11.0                      # Llama 3.2 Vision via Groq (Fast alternative)
+huggingface_hub==0.20.2           # Qwen2-VL via Hugging Face (Unlimited)
+httpx==0.27.0                     # Required for Groq compatibility
+
+# Whole-Slide Imaging (WSI)
+openslide-python==1.3.1           # WSI file reading
+large-image[openslide]==1.28.2    # Multi-format WSI support
+histomicstk==1.3.5                # Histopathology toolkit
+
+# Advanced Image Processing for WSI
+albumentations==1.3.1             # Data augmentation
+imagecodecs==2023.9.18            # Image codec support
+tifffile==2023.9.26               # TIFF file support
+
+# Attention Mechanisms for WSI
+einops==0.7.0                     # Tensor operations
+attention==4.0                    # Attention layers

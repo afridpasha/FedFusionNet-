@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard | FedFusionNet++</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-global.css') }}">
+    
+    <style>
+        * { font-family: 'Poppins', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 20px;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 24px rgba(102, 126, 234, 0.4);
+        }
+        .chart-container {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+        .chart-container-small {
+            position: relative;
+            height: 180px;
+            width: 100%;
+        }
+        .category-tab {
+            background: white;
+            color: #6b7280;
+            border: 2px solid transparent;
+        }
+        .category-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .category-tab:not(:disabled):hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <nav class="bg-white bg-opacity-10 backdrop-blur-lg border-b border-white border-opacity-20">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <i class="fas fa-hospital text-white text-3xl"></i>
+                    <div>
+                        <h1 class="text-white text-2xl font-bold">FedFusionNet++</h1>
+                        <p class="text-white text-sm opacity-80">{{ hospital_name }}</p>
+                    </div>
+                </div>
+                
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="/dashboard" class="text-white hover:text-gray-200 font-semibold transition">
+                        <i class="fas fa-home mr-2"></i>Dashboard
+                    </a>
+                    <a href="/analytics" class="text-white hover:text-gray-200 font-semibold transition border-b-2 border-white">
+                        <i class="fas fa-chart-line mr-2"></i>Analytics
+                    </a>
+                    <a href="/history" class="text-white hover:text-gray-200 font-semibold transition">
+                        <i class="fas fa-history mr-2"></i>History
+                    </a>
+                    <a href="/tests" class="text-white hover:text-gray-200 font-semibold transition">
+                        <i class="fas fa-flask mr-2"></i>Tests
+                    </a>
+                    <a href="/logout" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold transition">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </a>
+                </div>
+                
+                <!-- Mobile Menu Button -->
+                <button onclick="toggleMobileMenu()" class="md:hidden text-white text-2xl focus:outline-none">
+                    <i class="fas fa-bars" id="menuIcon"></i>
+                </button>
+            </div>
+            
+            <!-- Mobile Menu Dropdown -->
+            <div id="mobileMenu" class="hidden md:hidden mt-4 space-y-2">
+                <a href="/dashboard" class="block text-white hover:bg-white hover:bg-opacity-20 px-4 py-3 rounded-lg font-semibold transition">
+                    <i class="fas fa-home mr-2"></i>Dashboard
+                </a>
+                <a href="/analytics" class="block text-white hover:bg-white hover:bg-opacity-20 px-4 py-3 rounded-lg font-semibold transition border-b-2 border-white">
+                    <i class="fas fa-chart-line mr-2"></i>Analytics
+                </a>
+                <a href="/history" class="block text-white hover:bg-white hover:bg-opacity-20 px-4 py-3 rounded-lg font-semibold transition">
+                    <i class="fas fa-history mr-2"></i>History
+                </a>
+                <a href="/tests" class="block text-white hover:bg-white hover:bg-opacity-20 px-4 py-3 rounded-lg font-semibold transition">
+                    <i class="fas fa-flask mr-2"></i>Tests
+                </a>
+                <a href="/logout" class="block bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-lg font-semibold transition text-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+    
+    <script>
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            const icon = document.getElementById('menuIcon');
+            
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-times');
+            } else {
+                menu.classList.add('hidden');
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+            }
+        }
+    </script>
+    
+    <div class="max-w-7xl mx-auto px-4 py-6">
+        <!-- Header -->
+        <div class="glass-card p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-800 mb-1">
+                        <i class="fas fa-chart-line text-purple-600 mr-2"></i>Analytics Dashboard
+                    </h2>
+                    <p class="text-gray-600">Comprehensive insights and statistics</p>
+                </div>
+                <div class="flex gap-3">
+                    <select id="timeRange" class="px-4 py-2 border-2 border-purple-600 rounded-lg font-semibold">
+                        <option value="7">Last 7 Days</option>
+                        <option value="30" selected>Last 30 Days</option>
+                        <option value="90">Last 90 Days</option>
+                        <option value="365">Last Year</option>
+                        <option value="all">All Time</option>
+                    </select>
+                    <button onclick="refreshAnalytics()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-semibold transition">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Category Tabs -->
+        <div class="glass-card p-4 mb-6">
+            <div class="flex items-center justify-center space-x-4">
+                <button onclick="switchCategory('oral')" id="tab-oral" class="category-tab active px-6 py-3 rounded-lg font-semibold transition flex items-center space-x-2">
+                    <i class="fas fa-microscope"></i>
+                    <span>Oral Cancer Detection</span>
+                </button>
+                <button onclick="switchCategory('brain')" id="tab-brain" class="category-tab px-6 py-3 rounded-lg font-semibold transition flex items-center space-x-2 opacity-50 cursor-not-allowed" disabled>
+                    <i class="fas fa-brain"></i>
+                    <span>Brain Tumor Detection</span>
+                    <span class="text-xs bg-gray-200 px-2 py-1 rounded ml-2">Coming Soon</span>
+                </button>
+                <button onclick="switchCategory('lung')" id="tab-lung" class="category-tab px-6 py-3 rounded-lg font-semibold transition flex items-center space-x-2 opacity-50 cursor-not-allowed" disabled>
+                    <i class="fas fa-lungs"></i>
+                    <span>Lung Cancer Detection</span>
+                    <span class="text-xs bg-gray-200 px-2 py-1 rounded ml-2">Coming Soon</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- No Data Message (hidden by default) -->
+        <div id="noDataMessage" class="glass-card p-8 text-center hidden">
+            <i class="fas fa-chart-line text-gray-300 text-6xl mb-4"></i>
+            <h3 class="text-2xl font-bold text-gray-700 mb-2">No Data Available</h3>
+            <p class="text-gray-600 mb-4">There are no predictions for this category yet.</p>
+            <p class="text-sm text-gray-500">This feature is coming soon. Currently, only Oral Cancer Detection is available.</p>
+        </div>
+        
+        <!-- Analytics Content -->
+        <div id="analyticsContent">
+        
+        <!-- Statistics Cards -->
+        <div class="grid md:grid-cols-4 gap-4 mb-6">
+            <div class="stat-card">
+                <div class="flex items-center justify-between mb-1">
+                    <i class="fas fa-vial text-3xl"></i>
+                    <span class="text-xs opacity-80">Total Tests</span>
+                </div>
+                <p id="totalTests" class="text-3xl font-bold">0</p>
+                <p class="text-xs opacity-80 mt-1">All time</p>
+            </div>
+            
+            <div class="stat-card">
+                <div class="flex items-center justify-between mb-1">
+                    <i class="fas fa-exclamation-triangle text-3xl"></i>
+                    <span class="text-xs opacity-80">OSCC Detected</span>
+                </div>
+                <p id="osccCount" class="text-3xl font-bold">0</p>
+                <p id="osccPercentage" class="text-xs opacity-80 mt-1">0%</p>
+            </div>
+            
+            <div class="stat-card">
+                <div class="flex items-center justify-between mb-1">
+                    <i class="fas fa-percentage text-3xl"></i>
+                    <span class="text-xs opacity-80">Avg Confidence</span>
+                </div>
+                <p id="avgConfidence" class="text-3xl font-bold">0%</p>
+                <p class="text-xs opacity-80 mt-1">Across all tests</p>
+            </div>
+            
+            <div class="stat-card">
+                <div class="flex items-center justify-between mb-1">
+                    <i class="fas fa-fire text-3xl"></i>
+                    <span class="text-xs opacity-80">High Risk Cases</span>
+                </div>
+                <p id="highRiskCount" class="text-3xl font-bold">0</p>
+                <p id="highRiskPercentage" class="text-xs opacity-80 mt-1">0%</p>
+            </div>
+        </div>
+        
+        <!-- Charts Row 1 -->
+        <div class="grid md:grid-cols-2 gap-4 mb-6">
+            <!-- Predictions Over Time -->
+            <div class="glass-card p-4">
+                <h3 class="text-lg font-bold text-gray-800 mb-3">
+                    <i class="fas fa-chart-line text-purple-600 mr-2"></i>Predictions Over Time
+                </h3>
+                <div class="chart-container">
+                    <canvas id="predictionsChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- OSCC vs Normal Distribution -->
+            <div class="glass-card p-4">
+                <h3 class="text-lg font-bold text-gray-800 mb-3">
+                    <i class="fas fa-chart-pie text-purple-600 mr-2"></i>Result Distribution
+                </h3>
+                <div class="chart-container">
+                    <canvas id="distributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts Row 2 -->
+        <div class="grid md:grid-cols-2 gap-4 mb-6">
+            <!-- Risk Level Breakdown -->
+            <div class="glass-card p-4">
+                <h3 class="text-lg font-bold text-gray-800 mb-3">
+                    <i class="fas fa-chart-bar text-purple-600 mr-2"></i>Risk Level Breakdown
+                </h3>
+                <div class="chart-container">
+                    <canvas id="riskChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Confidence Distribution -->
+            <div class="glass-card p-4">
+                <h3 class="text-lg font-bold text-gray-800 mb-3">
+                    <i class="fas fa-chart-area text-purple-600 mr-2"></i>Confidence Distribution
+                </h3>
+                <div class="chart-container">
+                    <canvas id="confidenceChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Demographics -->
+        <div class="glass-card p-4 mb-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-3">
+                <i class="fas fa-users text-purple-600 mr-2"></i>Patient Demographics
+            </h3>
+            <div class="grid md:grid-cols-3 gap-4">
+                <div>
+                    <h4 class="font-semibold text-gray-700 mb-2 text-sm">Age Distribution</h4>
+                    <div class="chart-container-small">
+                        <canvas id="ageChart"></canvas>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-gray-700 mb-2 text-sm">Gender Distribution</h4>
+                    <div class="chart-container-small">
+                        <canvas id="genderChart"></canvas>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-gray-700 mb-2 text-sm">Top Risk Factors</h4>
+                    <div id="riskFactors" class="space-y-1 max-h-44 overflow-y-auto">
+                        <!-- Risk factors will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        </div><!-- End Analytics Content -->
+    </div>
+    
+    <script>
+        let charts = {};
+        let currentCategory = 'oral'; // Default category
+        
+        // Switch between categories
+        function switchCategory(category) {
+            currentCategory = category;
+            
+            // Update tab styles
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.getElementById(`tab-${category}`).classList.add('active');
+            
+            // Reload analytics for selected category
+            loadAnalytics();
+        }
+        
+        // Load analytics data
+        async function loadAnalytics() {
+            const timeRange = document.getElementById('timeRange').value;
+            
+            try {
+                const response = await fetch(`/api/analytics?range=${timeRange}&category=${currentCategory}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateStatistics(data.statistics);
+                    updateCharts(data.charts);
+                } else {
+                    console.error('Analytics error:', data.message);
+                }
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+            }
+        }
+        
+        function updateStatistics(stats) {
+            document.getElementById('totalTests').textContent = stats.total_tests;
+            document.getElementById('osccCount').textContent = stats.oscc_count;
+            document.getElementById('osccPercentage').textContent = `${stats.oscc_percentage}%`;
+            document.getElementById('avgConfidence').textContent = `${stats.avg_confidence}%`;
+            document.getElementById('highRiskCount').textContent = stats.high_risk_count;
+            document.getElementById('highRiskPercentage').textContent = `${stats.high_risk_percentage}%`;
+            
+            // Show/hide no data message
+            const noDataMsg = document.getElementById('noDataMessage');
+            const analyticsContent = document.getElementById('analyticsContent');
+            
+            if (stats.total_tests === 0) {
+                if (noDataMsg) noDataMsg.classList.remove('hidden');
+                if (analyticsContent) analyticsContent.classList.add('hidden');
+            } else {
+                if (noDataMsg) noDataMsg.classList.add('hidden');
+                if (analyticsContent) analyticsContent.classList.remove('hidden');
+            }
+        }
+        
+        function updateCharts(chartData) {
+            // Predictions Over Time
+            if (charts.predictions) charts.predictions.destroy();
+            charts.predictions = new Chart(document.getElementById('predictionsChart'), {
+                type: 'line',
+                data: {
+                    labels: chartData.timeline.labels,
+                    datasets: [{
+                        label: 'Predictions',
+                        data: chartData.timeline.data,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: { mode: 'index', intersect: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { font: { size: 10 } } },
+                        x: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } }
+                    }
+                }
+            });
+            
+            // Distribution Pie Chart
+            if (charts.distribution) charts.distribution.destroy();
+            charts.distribution = new Chart(document.getElementById('distributionChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['OSCC', 'Normal'],
+                    datasets: [{
+                        data: [chartData.distribution.oscc, chartData.distribution.normal],
+                        backgroundColor: ['#ef4444', '#10b981']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { size: 11 } } }
+                    }
+                }
+            });
+            
+            // Risk Level Bar Chart
+            if (charts.risk) charts.risk.destroy();
+            charts.risk = new Chart(document.getElementById('riskChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['High Risk', 'Medium Risk', 'Low Risk'],
+                    datasets: [{
+                        label: 'Cases',
+                        data: [chartData.risk.high, chartData.risk.medium, chartData.risk.low],
+                        backgroundColor: ['#ef4444', '#f59e0b', '#10b981']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { font: { size: 10 } } },
+                        x: { ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+            
+            // Confidence Distribution
+            if (charts.confidence) charts.confidence.destroy();
+            charts.confidence = new Chart(document.getElementById('confidenceChart'), {
+                type: 'line',
+                data: {
+                    labels: chartData.confidence.labels,
+                    datasets: [{
+                        label: 'Frequency',
+                        data: chartData.confidence.data,
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { font: { size: 10 } } },
+                        x: { ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+            
+            // Age Distribution
+            if (charts.age) charts.age.destroy();
+            charts.age = new Chart(document.getElementById('ageChart'), {
+                type: 'bar',
+                data: {
+                    labels: chartData.demographics.age.labels,
+                    datasets: [{
+                        data: chartData.demographics.age.data,
+                        backgroundColor: '#667eea'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { font: { size: 9 } } },
+                        x: { ticks: { font: { size: 9 } } }
+                    }
+                }
+            });
+            
+            // Gender Distribution
+            if (charts.gender) charts.gender.destroy();
+            charts.gender = new Chart(document.getElementById('genderChart'), {
+                type: 'pie',
+                data: {
+                    labels: ['Male', 'Female'],
+                    datasets: [{
+                        data: [chartData.demographics.gender.male, chartData.demographics.gender.female],
+                        backgroundColor: ['#3b82f6', '#ec4899']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { size: 10 } } }
+                    }
+                }
+            });
+            
+            // Risk Factors
+            const riskFactorsDiv = document.getElementById('riskFactors');
+            riskFactorsDiv.innerHTML = '';
+            if (chartData.demographics.risk_factors.length === 0) {
+                riskFactorsDiv.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">No data available</p>';
+            } else {
+                chartData.demographics.risk_factors.forEach(factor => {
+                    riskFactorsDiv.innerHTML += `
+                        <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                            <span class="text-xs font-semibold truncate">${factor.name}</span>
+                            <span class="text-xs text-purple-600 font-bold ml-2">${factor.count}</span>
+                        </div>
+                    `;
+                });
+            }
+        }
+        
+        function refreshAnalytics() {
+            loadAnalytics();
+        }
+        
+        // Load on page load
+        document.addEventListener('DOMContentLoaded', loadAnalytics);
+        
+        // Reload when time range changes
+        document.getElementById('timeRange').addEventListener('change', loadAnalytics);
+    </script>
+</body>
+</html>

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Available Tests | FedFusionNet++</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-global.css') }}">
+    
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        .test-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        .test-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 50px rgba(102, 126, 234, 0.4);
+            border-color: #667eea;
+        }
+        .badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <nav class="bg-white bg-opacity-10 backdrop-blur-lg border-b border-white border-opacity-20">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <i class="fas fa-hospital text-white text-3xl"></i>
+                    <div>
+                        <h1 class="text-white text-2xl font-bold">FedFusionNet++</h1>
+                        <p class="text-white text-sm opacity-80">{{ hospital_name }}</p>
+                    </div>
+                </div>
+                
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="/dashboard" class="text-white hover:text-gray-200 font-semibold transition">
+                        <i class="fas fa-home mr-2"></i>Dashboard
+                    </a>
+                    <a href="/analytics" class="text-white hover:text-gray-200 font-semibold transition">
+                        <i class="fas fa-chart-line mr-2"></i>Analytics
+                    </a>
+                    <a href="/history" class="text-white hover:text-gray-200 font-semibold transition">
+                        <i class="fas fa-history mr-2"></i>History
+                    </a>
+                    <a href="/tests" class="text-white hover:text-gray-200 font-semibold transition border-b-2 border-white">
+                        <i class="fas fa-flask mr-2"></i>Tests
+                    </a>
+                    <a href="/logout" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold transition">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </a>
+                </div>
+                
+                <!-- Mobile Menu Button -->
+                <button onclick="toggleMobileMenu()" class="md:hidden text-white text-2xl focus:outline-none">
+                    <i class="fas fa-bars" id="menuIcon"></i>
+                </button>
+            </div>
+            
+            <!-- Mobile Menu Dropdown -->
+            <div id="mobileMenu" class="hidden md:hidden mt-4 space-y-2">
+                <a href="/dashboard" class="block text-white hover:bg-white hover:bg-opacity-20 px-4 py-3 rounded-lg font-semibold transition">
+                    <i class="fas fa-home mr-2"></i>Dashboard
+                </a>
+                <a href="/analytics" class="block text-white hover:bg-white hover:bg-opacity-20 px-4 py-3 rounded-lg font-semibold transition">
+                    <i class="fas fa-chart-line mr-2"></i>Analytics
+                </a>
+                <a href="/history" class="block text-white hover:bg-white hover:bg-opacity-20 px-4 py-3 rounded-lg font-semibold transition">
+                    <i class="fas fa-history mr-2"></i>History
+                </a>
+                <a href="/tests" class="block text-white hover:bg-white hover:bg-opacity-20 px-4 py-3 rounded-lg font-semibold transition border-b-2 border-white">
+                    <i class="fas fa-flask mr-2"></i>Tests
+                </a>
+                <a href="/logout" class="block bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-lg font-semibold transition text-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+    
+    <script>
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            const icon = document.getElementById('menuIcon');
+            
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-times');
+            } else {
+                menu.classList.add('hidden');
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+            }
+        }
+    </script>
+    
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <div class="glass-card p-8 mb-8">
+            <h2 class="text-4xl font-bold text-gray-800 mb-2">
+                <i class="fas fa-flask text-purple-600"></i> Available Tests
+            </h2>
+            <p class="text-gray-600 text-lg">
+                Select a test to perform AI-powered medical diagnosis
+            </p>
+        </div>
+        
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Oral Cancer Detection Test -->
+            <div class="test-card">
+                <div class="flex items-center justify-between mb-4">
+                    <i class="fas fa-microscope text-5xl text-purple-600"></i>
+                    <span class="badge bg-green-100 text-green-700">
+                        <i class="fas fa-check-circle"></i> Active
+                    </span>
+                </div>
+                
+                <h3 class="text-2xl font-bold text-gray-800 mb-3">
+                    Oral Cancer Detection
+                </h3>
+                
+                <p class="text-gray-600 mb-4">
+                    AI-powered detection of Oral Squamous Cell Carcinoma (OSCC) from histopathology images
+                </p>
+                
+                <div class="space-y-2 mb-6">
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="fas fa-chart-line text-purple-600 mr-2"></i>
+                        <span><strong>Accuracy:</strong> 89%</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="fas fa-shield-alt text-purple-600 mr-2"></i>
+                        <span><strong>Privacy:</strong> ε=3.0 DP</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="fas fa-clock text-purple-600 mr-2"></i>
+                        <span><strong>Time:</strong> 3-5 seconds</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="fas fa-image text-purple-600 mr-2"></i>
+                        <span><strong>Input:</strong> Histopathology Image</span>
+                    </div>
+                </div>
+                
+                <a href="/predict" class="block w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-xl font-bold text-center hover:shadow-2xl transition transform hover:scale-105">
+                    <i class="fas fa-play mr-2"></i>Start Test
+                </a>
+            </div>
+            
+            <!-- Placeholder for Future Tests -->
+            <div class="test-card opacity-60">
+                <div class="flex items-center justify-between mb-4">
+                    <i class="fas fa-brain text-5xl text-gray-400"></i>
+                    <span class="badge bg-gray-100 text-gray-600">
+                        <i class="fas fa-clock"></i> Coming Soon
+                    </span>
+                </div>
+                
+                <h3 class="text-2xl font-bold text-gray-800 mb-3">
+                    Brain Tumor Detection
+                </h3>
+                
+                <p class="text-gray-600 mb-4">
+                    AI-powered detection of brain tumors from MRI scans
+                </p>
+                
+                <div class="space-y-2 mb-6">
+                    <div class="flex items-center text-sm text-gray-500">
+                        <i class="fas fa-chart-line text-gray-400 mr-2"></i>
+                        <span>Under Development</span>
+                    </div>
+                </div>
+                
+                <button disabled class="block w-full bg-gray-300 text-gray-500 py-3 rounded-xl font-bold text-center cursor-not-allowed">
+                    <i class="fas fa-lock mr-2"></i>Coming Soon
+                </button>
+            </div>
+            
+            <div class="test-card opacity-60">
+                <div class="flex items-center justify-between mb-4">
+                    <i class="fas fa-lungs text-5xl text-gray-400"></i>
+                    <span class="badge bg-gray-100 text-gray-600">
+                        <i class="fas fa-clock"></i> Coming Soon
+                    </span>
+                </div>
+                
+                <h3 class="text-2xl font-bold text-gray-800 mb-3">
+                    Lung Cancer Detection
+                </h3>
+                
+                <p class="text-gray-600 mb-4">
+                    AI-powered detection of lung cancer from CT scans
+                </p>
+                
+                <div class="space-y-2 mb-6">
+                    <div class="flex items-center text-sm text-gray-500">
+                        <i class="fas fa-chart-line text-gray-400 mr-2"></i>
+                        <span>Under Development</span>
+                    </div>
+                </div>
+                
+                <button disabled class="block w-full bg-gray-300 text-gray-500 py-3 rounded-xl font-bold text-center cursor-not-allowed">
+                    <i class="fas fa-lock mr-2"></i>Coming Soon
+                </button>
+            </div>
+        </div>
+        
+        <div class="glass-card p-8 mt-8">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-info-circle text-purple-600"></i> How It Works
+            </h3>
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="text-center">
+                    <div class="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-upload text-purple-600 text-2xl"></i>
+                    </div>
+                    <h4 class="font-bold text-gray-800 mb-2">1. Upload Image</h4>
+                    <p class="text-gray-600 text-sm">Upload medical images for analysis</p>
+                </div>
+                <div class="text-center">
+                    <div class="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-cog text-purple-600 text-2xl"></i>
+                    </div>
+                    <h4 class="font-bold text-gray-800 mb-2">2. AI Analysis</h4>
+                    <p class="text-gray-600 text-sm">Our federated model processes your data</p>
+                </div>
+                <div class="text-center">
+                    <div class="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-file-medical text-purple-600 text-2xl"></i>
+                    </div>
+                    <h4 class="font-bold text-gray-800 mb-2">3. Get Results</h4>
+                    <p class="text-gray-600 text-sm">Receive detailed diagnosis report</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

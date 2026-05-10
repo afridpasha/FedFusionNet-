@@ -1,0 +1,114 @@
+{
+  "resourceType": "DiagnosticReport",
+  "id": "fedfusion-P-12346-20260428111906",
+  "status": "final",
+  "category": [
+    {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/v2-0074",
+          "code": "PAT",
+          "display": "Pathology"
+        }
+      ]
+    }
+  ],
+  "code": {
+    "coding": [
+      {
+        "system": "http://loinc.org",
+        "code": "11529-5",
+        "display": "Surgical pathology study"
+      }
+    ],
+    "text": "Oral Cancer AI Screening"
+  },
+  "subject": {
+    "reference": "Patient/P-12346",
+    "display": "Patient P-12346"
+  },
+  "effectiveDateTime": "2026-04-28T11:19:06.191788",
+  "issued": "2026-04-28T11:19:06.191788",
+  "performer": [
+    {
+      "reference": "Organization/fedfusionnet",
+      "display": "FedFusionNet++ AI System"
+    }
+  ],
+  "conclusion": "OSCC - Risk Tier: MODERATE (Confidence: 73.06%, Uncertainty: 0.0000)",
+  "conclusionCode": [
+    {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "363346000",
+          "display": "Malignant neoplasm"
+        }
+      ]
+    }
+  ],
+  "result": [
+    {
+      "reference": "Observation/confidence",
+      "display": "AI Model Confidence",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "confidence",
+        "status": "final",
+        "code": {
+          "text": "AI Model Confidence"
+        },
+        "effectiveDateTime": "2026-04-28T11:19:06.191788",
+        "valueQuantity": {
+          "value": 0.7306,
+          "unit": "%"
+        }
+      }
+    },
+    {
+      "reference": "Observation/uncertainty",
+      "display": "Prediction Uncertainty",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "uncertainty",
+        "status": "final",
+        "code": {
+          "text": "Prediction Uncertainty"
+        },
+        "effectiveDateTime": "2026-04-28T11:19:06.191788",
+        "valueQuantity": {
+          "value": 0.0,
+          "unit": "score"
+        }
+      }
+    },
+    {
+      "reference": "Observation/risk-tier",
+      "display": "Clinical Risk Tier",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "risk-tier",
+        "status": "final",
+        "code": {
+          "text": "Clinical Risk Tier"
+        },
+        "effectiveDateTime": "2026-04-28T11:19:06.191788",
+        "valueString": "MODERATE"
+      }
+    },
+    {
+      "reference": "Observation/cancer-stage",
+      "display": "Cancer Stage",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "cancer-stage",
+        "status": "final",
+        "code": {
+          "text": "Cancer Stage"
+        },
+        "effectiveDateTime": "2026-04-28T11:19:06.191788",
+        "valueString": "Stage 2"
+      }
+    }
+  ]
+}

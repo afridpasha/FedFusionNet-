@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Login | FedFusionNet++</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-global.css') }}">
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .glass-card {
+                border-radius: 20px;
+                padding: 1.5rem !important;
+            }
+            .hero-icon {
+                font-size: 3rem !important;
+            }
+            .hero-title {
+                font-size: 2.5rem !important;
+            }
+            .hero-subtitle {
+                font-size: 1.25rem !important;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .hero-icon {
+                font-size: 2.5rem !important;
+            }
+            .hero-title {
+                font-size: 2rem !important;
+            }
+            .hero-subtitle {
+                font-size: 1rem !important;
+            }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4 sm:p-6 md:p-8">
+    <div class="w-full max-w-6xl grid md:grid-cols-2 gap-6 md:gap-8 items-center">
+        <!-- Hero Section - Hidden on mobile, visible on tablet+ -->
+        <div class="hidden md:block text-white space-y-4 md:space-y-6 p-4 md:p-8">
+            <i class="fas fa-hospital hero-icon text-6xl md:text-8xl mb-4 md:mb-6"></i>
+            <h1 class="hero-title text-4xl md:text-6xl font-extrabold">FedFusionNet<span class="text-yellow-300">++</span></h1>
+            <p class="hero-subtitle text-xl md:text-2xl font-light">Privacy-Preserving AI for Healthcare</p>
+        </div>
+        
+        <!-- Login Card -->
+        <div class="glass-card p-6 sm:p-8 md:p-10 w-full">
+            <!-- Mobile Hero - Only visible on mobile -->
+            <div class="md:hidden text-center mb-6">
+                <i class="fas fa-hospital text-purple-600 text-5xl mb-3"></i>
+                <h1 class="text-3xl font-extrabold text-gray-800">FedFusionNet<span class="text-purple-600">++</span></h1>
+            </div>
+            
+            <div class="text-center mb-6 md:mb-8">
+                <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">Hospital Login</h2>
+                <p class="text-sm sm:text-base text-gray-600">Access your secure AI dashboard</p>
+            </div>
+            
+            <form id="loginForm">
+                <div class="mb-4 md:mb-6">
+                    <label class="block text-gray-700 font-semibold mb-2 text-sm sm:text-base">
+                        <i class="fas fa-envelope mr-2"></i>Hospital Email
+                    </label>
+                    <input type="email" id="email" placeholder="admin@yourhospital.com" required
+                           class="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:outline-none transition">
+                </div>
+                
+                <div class="mb-4 md:mb-6">
+                    <label class="block text-gray-700 font-semibold mb-2 text-sm sm:text-base">
+                        <i class="fas fa-lock mr-2"></i>Password
+                    </label>
+                    <input type="password" id="password" placeholder="Enter password" required
+                           class="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:outline-none transition">
+                </div>
+                
+                <button type="submit"
+                        class="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 sm:py-4 rounded-xl font-bold text-base sm:text-lg hover:shadow-2xl transition transform hover:scale-105 active:scale-95">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Login to Dashboard
+                </button>
+                
+                <div class="text-center mt-4 md:mt-6">
+                    <a href="/signup" class="text-purple-600 font-semibold hover:underline text-sm sm:text-base">
+                        New Hospital? Register here
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            const blockedDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'rediffmail.com'];
+            const emailDomain = email.split('@')[1];
+            
+            if (blockedDomains.includes(emailDomain)) {
+                alert('❌ Personal emails not allowed! Use hospital domain email.');
+                return;
+            }
+            
+            const btn = this.querySelector('button[type="submit"]');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Authenticating...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email, password})
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    btn.innerHTML = '<i class="fas fa-check mr-2"></i>Success! Redirecting...';
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 500);
+                } else {
+                    alert('❌ ' + data.message);
+                    btn.innerHTML = originalHTML;
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
