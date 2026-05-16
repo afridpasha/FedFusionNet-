@@ -1996,6 +1996,17 @@ def predict():
                     update_data['pdf_storage'] = 'r2'
                     update_data['pdf_filename'] = f'clinical_report_{patient_id}.pdf'
                     print(f"[MONGODB] Storing R2 URL in MongoDB (PDF not stored in DB)")
+                    
+                    # DELETE LOCAL PDF AFTER SUCCESSFUL R2 UPLOAD
+                    try:
+                        if pdf_path and os.path.exists(pdf_path):
+                            os.remove(pdf_path)
+                            print(f"[CLEANUP] ✓ Deleted local PDF: {pdf_path}")
+                        if json_path and os.path.exists(json_path):
+                            os.remove(json_path)
+                            print(f"[CLEANUP] ✓ Deleted local JSON: {json_path}")
+                    except Exception as cleanup_error:
+                        print(f"[CLEANUP] ⚠ Failed to delete local files: {cleanup_error}")
                 else:
                     # Fallback: Store in MongoDB if R2 fails AND PDF is small enough
                     if pdf_binary and pdf_size_mb < 5:
