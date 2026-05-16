@@ -191,7 +191,7 @@ def download_model_from_hf(filename):
     try:
         from huggingface_hub import hf_hub_download
         
-        MODEL_REPO_ID = "afridpasha/FedFusionNet-Plus-Plus"
+        MODEL_REPO_ID = "afridpasha1983/fedfusionnet-models"
         
         print(f"[HF] Downloading {filename} from Model Hub...")
         model_path = hf_hub_download(
