@@ -1035,16 +1035,65 @@ def get_analytics():
 
 @app.route('/api/generate-pdf', methods=['POST'])
 def generate_pdf_endpoint():
-    """Generate PDF report from prediction results"""
+    """Generate PDF report from prediction results - Download from R2 or regenerate"""
     try:
         from backend.clinical_reports import ClinicalReportGenerator
         from flask import send_file
+        from bson.objectid import ObjectId
         
         data = request.json
         patient_id = data.get('patient_id', 'UNKNOWN')
         results = data.get('results', {})
         
         print(f"[PDF-ENDPOINT] Received request for patient {patient_id}")
+        
+        # Try to download from R2 or MongoDB first
+        if MONGODB_AVAILABLE:
+            try:
+                # Find the most recent prediction for this patient
+                prediction = predictions_collection.find_one(
+                    {'patient_id': patient_id},
+                    sort=[('timestamp', -1)]
+                )
+                
+                if prediction:
+                    # Check if PDF is in R2
+                    if 'pdf_r2_key' in prediction and prediction['pdf_r2_key']:
+                        if R2_STORAGE and R2_STORAGE.is_available():
+                            print(f"[PDF-ENDPOINT] Downloading from R2: {prediction['pdf_r2_key']}")
+                            
+                            pdf_binary = R2_STORAGE.download_pdf(prediction['pdf_r2_key'])
+                            
+                            if pdf_binary:
+                                pdf_buffer = BytesIO(pdf_binary)
+                                pdf_buffer.seek(0)
+                                
+                                return send_file(
+                                    pdf_buffer,
+                                    mimetype='application/pdf',
+                                    as_attachment=True,
+                                    download_name=f'clinical_report_{patient_id}.pdf'
+                                )
+                    
+                    # Check if PDF is in MongoDB
+                    elif 'pdf_report' in prediction and prediction['pdf_report']:
+                        print(f"[PDF-ENDPOINT] Downloading from MongoDB")
+                        
+                        pdf_binary = base64.b64decode(prediction['pdf_report'])
+                        pdf_buffer = BytesIO(pdf_binary)
+                        pdf_buffer.seek(0)
+                        
+                        return send_file(
+                            pdf_buffer,
+                            mimetype='application/pdf',
+                            as_attachment=True,
+                            download_name=f'clinical_report_{patient_id}.pdf'
+                        )
+            except Exception as e:
+                print(f"[PDF-ENDPOINT] Failed to download existing PDF: {e}")
+        
+        # If not found in storage, regenerate PDF
+        print(f"[PDF-ENDPOINT] Regenerating PDF for patient {patient_id}")
         print(f"[PDF-ENDPOINT] Has WSI data: {bool(results.get('wsi_result'))}")
         print(f"[PDF-ENDPOINT] Has Survival data: {bool(results.get('survival_analysis'))}")
         
@@ -1064,15 +1113,29 @@ def generate_pdf_endpoint():
             'survival_analysis': results.get('survival_analysis')  # Include Survival
         }
         
-        # Generate PDF
+        # Generate PDF in memory
         report_gen = ClinicalReportGenerator()
         pdf_path = report_gen.generate_pdf_report(complete_result)
         
-        print(f"[PDF] Generated PDF: {pdf_path}")
+        print(f"[PDF-ENDPOINT] PDF generated: {pdf_path}")
         
-        # Send file
+        # Read PDF into memory and delete local file immediately
+        with open(pdf_path, 'rb') as f:
+            pdf_binary = f.read()
+        
+        # Delete local file
+        try:
+            os.remove(pdf_path)
+            print(f"[PDF-ENDPOINT] Deleted temporary PDF: {pdf_path}")
+        except:
+            pass
+        
+        # Send from memory
+        pdf_buffer = BytesIO(pdf_binary)
+        pdf_buffer.seek(0)
+        
         return send_file(
-            pdf_path,
+            pdf_buffer,
             mimetype='application/pdf',
             as_attachment=True,
             download_name=f'clinical_report_{patient_id}.pdf'
