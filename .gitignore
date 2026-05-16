@@ -54,6 +54,5 @@ uploads/*
 # Ignore main README.md (use README_HF.md for Hugging Face)
 README.md
 
-# Execution Photos and Logos (too large for HF)
+# Execution Photos (too large for HF)
 Execution Photos/
-Logos/
