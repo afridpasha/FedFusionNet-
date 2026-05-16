@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Generated Reports
+backend/reports/*.pdf
+backend/reports/*.json
+reports/*.pdf
+reports/*.json
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Temporary
+*.tmp
+*.temp
+
+# Large files - DO NOT PUSH
+datasets/
+models_cache/
+backend/models_cache/
+uploads/*
+!uploads/.gitkeep
+
+# Keep directory structure
+!backend/reports/.gitkeep
+!reports/.gitkeep
+
+# Ignore main README.md (use README_HF.md for Hugging Face)
+README.md
+
+# Execution Photos and Logos (too large for HF)
+Execution Photos/
+Logos/

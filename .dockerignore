@@ -1,0 +1,81 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+env/
+venv/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Documentation
+*.md
+!README.md
+HEATMAP_GUIDE.md
+README_HF.md
+
+# Logs
+*.log
+logs/*.log
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+
+# Large datasets (should be downloaded separately)
+datasets/
+models_cache/
+
+# Generated reports (will be created at runtime)
+backend/reports/*.pdf
+backend/reports/*.json
+reports/*.pdf
+reports/*.json
+
+# Uploads (will be created at runtime)
+uploads/*
+backend/uploads/*
+static/uploads/*
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Git files
+.git/
+.github/
+
+# Execution photos (not needed in production)
+Execution Photos/
+
+# Keep directory structure
+!backend/reports/.gitkeep
+!backend/uploads/.gitkeep
+!uploads/.gitkeep

@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  # NeuroPlex AI Application
+  neuroplex-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: neuroplex-ai
+    ports:
+      - "7860:7860"
+    environment:
+      # Flask Configuration
+      - FLASK_APP=backend/app.py
+      - FLASK_ENV=production
+      - FLASK_DEBUG=0
+      - SECRET_KEY=${SECRET_KEY:-your_secret_key_change_this}
+      
+      # MongoDB Configuration
+      - MONGODB_URI=mongodb://mongodb:27017/
+      - DATABASE_NAME=fedfusionnet
+      
+      # VLM Service Configuration
+      - VLM_PROVIDER=${VLM_PROVIDER:-gemini}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      
+      # Cloudflare R2 Configuration
+      - R2_ACCOUNT_ID=${R2_ACCOUNT_ID}
+      - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID}
+      - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY}
+      - R2_BUCKET_NAME=${R2_BUCKET_NAME:-neuroplex-reports}
+      
+      # Application Configuration
+      - MAX_CONTENT_LENGTH=16777216
+      - UPLOAD_FOLDER=backend/uploads
+      - ALLOWED_EXTENSIONS=png,jpg,jpeg,tiff,svs,ndpi
+    
+    volumes:
+      # Mount models directory (if models are large)
+      - ./backend/models:/app/backend/models:ro
+      # Mount reports directory for persistence
+      - ./backend/reports:/app/backend/reports
+      # Mount logs directory
+      - ./logs:/app/logs
+    
+    depends_on:
+      - mongodb
+    
+    networks:
+      - neuroplex-network
+    
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7860/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: neuroplex-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=fedfusionnet
+    volumes:
+      - mongodb-data:/data/db
+      - mongodb-config:/data/configdb
+    networks:
+      - neuroplex-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  neuroplex-network:
+    driver: bridge
+
+volumes:
+  mongodb-data:
+    driver: local
+  mongodb-config:
+    driver: local
