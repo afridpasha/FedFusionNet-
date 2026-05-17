@@ -52,7 +52,7 @@ uploads/*
 !reports/.gitkeep
 
 # Ignore main README.md (use README_HF.md for Hugging Face)
-README.md
+#README.md
 
 # Execution Photos (too large for HF)
-Execution Photos/
+#Execution Photos/
