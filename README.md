@@ -1,6 +1,12 @@
-# 🏥 FedFusionNet++: Advanced Two-Stage Oral Cancer Detection System
+# 🏥 NeuroPlex AI - Neural Intelligence for Healthcare
+
+**Powered by HetFusionNet Medical AI Platform**
 
 <div align="center">
+
+![NeuroPlex AI Splash Screen](Logos/Splash%20Screen%20App%20Logo.png)
+
+![NeuroPlex AI Logo](Logos/Final%20APP%20Logo.png)
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch 2.2](https://img.shields.io/badge/pytorch-2.2-red.svg)](https://pytorch.org/)
@@ -16,6 +22,18 @@
 [🚀 Quick Start](#-quick-start) • [📖 Documentation](#-table-of-contents) • [🎯 Features](#-key-features) • [🏗️ Architecture](#-system-architecture) • [💻 Demo](#-demo-credentials)
 
 </div>
+
+---
+
+## 🚀 Overview
+
+**NeuroPlex AI** is a revolutionary medical application that brings the power of **HetFusionNet Federated Learning Medical AI** to healthcare providers. This cutting-edge platform leverages advanced neural networks for real-time cancer detection while maintaining the highest standards of privacy and security through federated learning.
+
+Built with Flask and featuring 2026's most advanced AI technologies, NeuroPlex AI combines biometric security, explainable AI, vision-language models, and privacy-first architecture to deliver a seamless healthcare diagnostic experience.
+
+### 🎯 Mission
+
+Transforming medical diagnostics through AI-powered cancer detection while ensuring patient privacy through federated learning - where your data is protected with enterprise-grade security.
 
 ---
 
@@ -42,9 +60,9 @@
 
 ## 🎯 Project Overview
 
-**FedFusionNet++** is an enterprise-grade, production-ready web application designed for accurate detection and staging of **Oral Squamous Cell Carcinoma (OSCC)** using cutting-edge artificial intelligence. This system represents a breakthrough in medical AI by combining multiple state-of-the-art technologies into a unified diagnostic platform.
+**NeuroPlex AI** is an enterprise-grade, production-ready web application designed for accurate detection and staging of **Oral Squamous Cell Carcinoma (OSCC)** using cutting-edge artificial intelligence. This system represents a breakthrough in medical AI by combining multiple state-of-the-art technologies into a unified diagnostic platform.
 
-### 🌟 What Makes FedFusionNet++ Unique?
+### 🌟 What Makes NeuroPlex AI Unique?
 
 | Feature | Description |
 |---------|-------------|
@@ -178,7 +196,7 @@ final_prediction = 'OSCC' if hybrid_score > 0.5 else 'Normal'
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                          FEDFUSIONNET++ SYSTEM                              │
+│                          NeuroPlex AI SYSTEM                              │
 │                     Two-Stage AI Diagnostic Platform                        │
 └─────────────────────────────────────────────────────────────────────────────┘
                                       │
@@ -1361,7 +1379,7 @@ curl http://127.0.0.1:5000/api/health
     "cnn_model": "loaded",
     "tabular_model": "loaded"
   },
-  "message": "FedFusionNet++ API is running"
+  "message": "NeuroPlex AI API is running"
 }
 ```
 
@@ -1474,7 +1492,7 @@ python demo_pretrained.py
 
 **Output:**
 ```
-🔬 FedFusionNet++ Demo
+🔬 NeuroPlex AI Demo
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 📊 Stage-1 CNN Results:
@@ -2168,7 +2186,7 @@ curl http://127.0.0.1:5000/api/health
     "tabular_model": "loaded"
   },
   "vlm_service": "initialized",
-  "message": "FedFusionNet++ API is running"
+  "message": "NeuroPlex AI API is running"
 }
 ```
 
@@ -2727,7 +2745,7 @@ This project is licensed under the **MIT License**.
 ```
 MIT License
 
-Copyright (c) 2026 FedFusionNet++ Team
+Copyright (c) 2026 NeuroPlex AI Team
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -2798,7 +2816,7 @@ SOFTWARE.
 
 - **Email**: support@fedfusionnet.com
 - **Twitter**: @FedFusionNet
-- **LinkedIn**: FedFusionNet++
+- **LinkedIn**: NeuroPlex AI
 
 ### 💬 Community
 
@@ -2868,7 +2886,7 @@ SOFTWARE.
 
 ## 📸 Execution Photos
 
-This section provides a comprehensive visual walkthrough of the FedFusionNet++ application, demonstrating all features and functionalities through real execution screenshots.
+This section provides a comprehensive visual walkthrough of the **NeuroPlex AI** application, demonstrating all features and functionalities through real execution screenshots.
 
 ---
 
@@ -2879,12 +2897,12 @@ This section provides a comprehensive visual walkthrough of the FedFusionNet++ a
 ![User Login](Execution%20Photos/1.png)
 
 **Description:**
-The secure login page serves as the entry point to the FedFusionNet++ platform. This professional authentication interface features:
+The secure login page serves as the entry point to the NeuroPlex AI platform. This professional authentication interface features:
 - Hospital email address input field
 - Secure password entry with masked characters
 - "Remember Me" option for convenience
 - "Forgot Password?" recovery link
-- Clean, medical-themed UI design with the FedFusionNet++ logo
+- Clean, medical-themed UI design with the NeuroPlex AI logo
 - Responsive layout optimized for desktop and tablet devices
 
 **Security Features:**
@@ -2933,7 +2951,7 @@ For testing and demonstration purposes, the application provides pre-configured 
 ![Dashboard Overview](Execution%20Photos/3.png)
 
 **Description:**
-The main dashboard provides a comprehensive overview of the FedFusionNet++ system status and capabilities. This central hub displays:
+The main dashboard provides a comprehensive overview of the NeuroPlex AI system status and capabilities. This central hub displays:
 
 **Model Architecture Information:**
 - **Stage-1 CNN Model**: HetFusionNet v2 (Swin-ViT + CrossViT)
@@ -3422,7 +3440,7 @@ Detailed view of the second test (follow-up) in the temporal comparison:
 ![Tests Tab](Execution%20Photos/13.png)
 
 **Description:**
-The Tests tab displays all available diagnostic tests in the FedFusionNet++ platform. This centralized testing hub provides:
+The Tests tab displays all available diagnostic tests in the NeuroPlex AI platform. This centralized testing hub provides:
 
 **Available Test Categories:**
 
@@ -4852,7 +4870,7 @@ Nivel de Riesgo: ALTO
 
 ## 📸 Execution Photos Summary
 
-This comprehensive visual documentation demonstrates the complete functionality of FedFusionNet++, from user authentication through advanced AI-powered diagnostics, temporal analysis, and multi-language support. The system successfully integrates:
+This comprehensive visual documentation demonstrates the complete functionality of NeuroPlex AI, from user authentication through advanced AI-powered diagnostics, temporal analysis, and multi-language support. The system successfully integrates:
 
 ✅ **25 Screenshots** covering all major features
 ✅ **User Authentication** with demo credentials
@@ -4869,15 +4887,16 @@ The execution photos validate the production-ready status of the application and
 
 ## 📈 Citation
 
-If you use FedFusionNet++ in your research, please cite:
+If you use NeuroPlex AI in your research, please cite:
 
 ```bibtex
-@software{fedfusionnet_plusplus_2026,
-  title = {FedFusionNet++: Two-Stage Oral Cancer Detection System},
+@software{neuroplex_ai_2026,
+  title = {NeuroPlex AI: Neural Intelligence for Healthcare - Two-Stage Oral Cancer Detection System},
   author = {Your Name and Contributors},
   year = {2026},
   url = {https://github.com/yourusername/fedfusionnet_plus_plus},
-  version = {1.0.0}
+  version = {1.0.0},
+  note = {Powered by HetFusionNet Medical AI Platform}
 }
 ```
 
@@ -4887,7 +4906,7 @@ If you use FedFusionNet++ in your research, please cite:
 
 **IMPORTANT MEDICAL DISCLAIMER:**
 
-FedFusionNet++ is a research tool designed to assist medical professionals in the diagnosis of oral cancer. It is **NOT** a substitute for professional medical advice, diagnosis, or treatment.
+NeuroPlex AI is a research tool designed to assist medical professionals in the diagnosis of oral cancer. It is **NOT** a substitute for professional medical advice, diagnosis, or treatment.
 
 **Key Points:**
 
@@ -4917,8 +4936,8 @@ FedFusionNet++ is a research tool designed to assist medical professionals in th
 
 **Built with ❤️ for advancing AI in medical diagnostics**
 
-**FedFusionNet++ © 2026**
+**NeuroPlex AI © 2026 - Powered by HetFusionNet Medical AI Platform**
 
-[⬆ Back to Top](#-fedfusionnet-advanced-two-stage-oral-cancer-detection-system)
+[⬆ Back to Top](#-neuroplex-ai---neural-intelligence-for-healthcare)
 
 </div>
