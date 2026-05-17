@@ -322,12 +322,46 @@ class PDFReportGenerator:
         return y
     
     def _draw_header(self, c):
-        """Draw report header with proper spacing"""
+        """Draw report header with brand logo and proper spacing"""
+        import os
+        from PIL import Image as PILImage
+        
+        # Draw Brand Logo (Top Left)
+        # Try multiple possible logo paths
+        logo_paths = [
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'frontend', 'static', 'logo.png'),
+            os.path.join(os.getcwd(), 'frontend', 'static', 'logo.png'),
+            'frontend/static/logo.png',
+            './frontend/static/logo.png'
+        ]
+        
+        logo_loaded = False
+        for logo_path in logo_paths:
+            if os.path.exists(logo_path):
+                try:
+                    print(f"[PDF] Loading logo from: {logo_path}")
+                    logo = PILImage.open(logo_path)
+                    # Logo dimensions: 60x60 pixels
+                    logo_width = 60
+                    logo_height = 60
+                    c.drawImage(ImageReader(logo), 50, self.page_height - 70, width=logo_width, height=logo_height, mask='auto')
+                    logo_loaded = True
+                    print(f"[PDF] ✓ Logo loaded successfully")
+                    break
+                except Exception as e:
+                    print(f"[PDF] Error loading logo from {logo_path}: {e}")
+        
+        if not logo_loaded:
+            print(f"[PDF] WARNING: Logo not found in any of the expected paths")
+            print(f"[PDF] Current working directory: {os.getcwd()}")
+            print(f"[PDF] __file__ location: {os.path.abspath(__file__)}")
+        
+        # Draw Title (next to logo)
         c.setFont("Helvetica-Bold", 22)
-        c.drawString(50, self.page_height - 50, "NeuroPlex Diagnostic Report")
+        c.drawString(120, self.page_height - 45, "NeuroPlex Diagnostic Report")
         
         c.setFont("Helvetica", 10)
-        c.drawString(50, self.page_height - 72, f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        c.drawString(120, self.page_height - 65, f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         
         # Draw line
         c.setLineWidth(1.5)
