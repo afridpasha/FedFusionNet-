@@ -42,6 +42,7 @@ Thumbs.db
 
 # Large files - DO NOT PUSH
 datasets/
+models/
 models_cache/
 backend/models_cache/
 uploads/*

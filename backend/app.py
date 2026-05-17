@@ -1,5 +1,5 @@
 """
-FedFusionNet++ - Complete Flask Application
+NeuroPlex - Complete Flask Application
 Authentication + Dashboard + Prediction
 """
 
@@ -33,11 +33,11 @@ load_dotenv()
 sys.path.append(str(Path(__file__).parent.parent))
 
 # ============================================
-# MODEL ARCHITECTURE - FedFusionNetPlus
+# MODEL ARCHITECTURE - neuroplexPlus
 # ============================================
-class FedFusionNetPlus(nn.Module):
+class neuroplexPlus(nn.Module):
     """
-    FedFusionNet++ - Hybrid Vision Transformer for Oral Cancer Detection
+    NeuroPlex - Hybrid Vision Transformer for Oral Cancer Detection
     
     Architecture Components:
     1. Swin-ViT-Small (327 params) → 768-dim features
@@ -134,7 +134,7 @@ ALLOWED_EXTENSIONS = {'pdf', 'jpg', 'jpeg', 'png'}
 # MONGODB SETUP (WITH ERROR HANDLING)
 # ============================================
 MONGODB_URI = os.getenv('MONGODB_URI')
-DATABASE_NAME = os.getenv('DATABASE_NAME', 'fedfusionnet')
+DATABASE_NAME = os.getenv('DATABASE_NAME', 'neuroplex')
 
 # Try to connect to MongoDB, but don't fail if unavailable
 try:
@@ -209,7 +209,7 @@ def load_cnn_model():
     """Load Stage-1 CNN Model (SWIN-ViT + Cross-ViT trained on Kaggle)"""
     try:
         # Create model
-        model = FedFusionNetPlus(num_classes=2)
+        model = neuroplexPlus(num_classes=2)
         
         # Try local path first
         model_path = Path(__file__).parent.parent / 'models' / 'hetfusionnet_v2_FINAL.pth'
@@ -293,6 +293,18 @@ try:
     print("[OK] Temporal Comparator loaded")
 except Exception as e:
     print(f"[WARNING] Temporal Comparator not available: {e}")
+
+# Load R2 Storage Service
+R2_STORAGE = None
+try:
+    from backend.r2_storage import create_r2_service
+    R2_STORAGE = create_r2_service()
+    if R2_STORAGE and R2_STORAGE.is_available():
+        print(f"[OK] R2 Storage connected: {R2_STORAGE.bucket_name}")
+    else:
+        print("[WARNING] R2 Storage not available (check .env credentials)")
+except Exception as e:
+    print(f"[WARNING] R2 Storage not available: {e}")
 
 # Load VLM Service (TIER 1 Feature)
 VLM_SERVICE = None
@@ -564,7 +576,7 @@ def results():
 
 @app.route('/api/download-pdf/<prediction_id>', methods=['GET'])
 def download_pdf(prediction_id):
-    """Download PDF report from MongoDB"""
+    """Download PDF report from R2 or MongoDB"""
     if 'hospital_id' not in session:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     
@@ -575,7 +587,7 @@ def download_pdf(prediction_id):
         from bson.objectid import ObjectId
         from flask import send_file
         
-        # Find prediction document (not filtered by hospital_id)
+        # Find prediction document
         prediction = predictions_collection.find_one({
             '_id': ObjectId(prediction_id)
         })
@@ -583,24 +595,53 @@ def download_pdf(prediction_id):
         if not prediction:
             return jsonify({'success': False, 'message': 'Prediction not found'}), 404
         
-        if 'pdf_report' not in prediction or not prediction['pdf_report']:
+        # Check if PDF is stored in R2
+        if 'pdf_r2_key' in prediction and prediction['pdf_r2_key']:
+            if not R2_STORAGE or not R2_STORAGE.is_available():
+                return jsonify({'success': False, 'message': 'R2 storage not available'}), 503
+            
+            print(f"[PDF-DOWNLOAD] Downloading from R2: {prediction['pdf_r2_key']}")
+            
+            # Download PDF from R2
+            pdf_binary = R2_STORAGE.download_pdf(prediction['pdf_r2_key'])
+            
+            if not pdf_binary:
+                return jsonify({'success': False, 'message': 'Failed to download from R2'}), 500
+            
+            # Create BytesIO object
+            pdf_buffer = BytesIO(pdf_binary)
+            pdf_buffer.seek(0)
+            
+            filename = prediction.get('pdf_filename', f"report_{prediction_id}.pdf")
+            
+            return send_file(
+                pdf_buffer,
+                mimetype='application/pdf',
+                as_attachment=True,
+                download_name=filename
+            )
+        
+        # Fallback: Check if PDF is stored in MongoDB (old method)
+        elif 'pdf_report' in prediction and prediction['pdf_report']:
+            print(f"[PDF-DOWNLOAD] Downloading from MongoDB (legacy)")
+            
+            # Decode base64 PDF
+            pdf_binary = base64.b64decode(prediction['pdf_report'])
+            
+            # Create BytesIO object
+            pdf_buffer = BytesIO(pdf_binary)
+            pdf_buffer.seek(0)
+            
+            filename = prediction.get('pdf_filename', f"report_{prediction_id}.pdf")
+            
+            return send_file(
+                pdf_buffer,
+                mimetype='application/pdf',
+                as_attachment=True,
+                download_name=filename
+            )
+        else:
             return jsonify({'success': False, 'message': 'PDF not available'}), 404
-        
-        # Decode base64 PDF
-        pdf_binary = base64.b64decode(prediction['pdf_report'])
-        
-        # Create BytesIO object
-        pdf_buffer = BytesIO(pdf_binary)
-        pdf_buffer.seek(0)
-        
-        filename = prediction.get('pdf_filename', f"report_{prediction_id}.pdf")
-        
-        return send_file(
-            pdf_buffer,
-            mimetype='application/pdf',
-            as_attachment=True,
-            download_name=filename
-        )
         
     except Exception as e:
         print(f"[ERROR] PDF download failed: {e}")
@@ -618,7 +659,7 @@ def health_check():
             'cnn_model': 'loaded' if CNN_MODEL is not None else 'not loaded',
             'tabular_model': 'loaded' if TABULAR_MODEL is not None else 'not loaded'
         },
-        'message': 'FedFusionNet++ API is running'
+        'message': 'NeuroPlex API is running'
     }), 200
 
 @app.route('/api/test-navbar', methods=['GET'])
@@ -994,16 +1035,69 @@ def get_analytics():
 
 @app.route('/api/generate-pdf', methods=['POST'])
 def generate_pdf_endpoint():
-    """Generate PDF report from prediction results"""
+    """Generate PDF report from prediction results - Download from R2 or regenerate"""
     try:
         from backend.clinical_reports import ClinicalReportGenerator
         from flask import send_file
+        from bson.objectid import ObjectId
         
         data = request.json
         patient_id = data.get('patient_id', 'UNKNOWN')
         results = data.get('results', {})
         
-        # Prepare complete result data
+        print(f"[PDF-ENDPOINT] Received request for patient {patient_id}")
+        
+        # Try to download from R2 or MongoDB first
+        if MONGODB_AVAILABLE:
+            try:
+                # Find the most recent prediction for this patient
+                prediction = predictions_collection.find_one(
+                    {'patient_id': patient_id},
+                    sort=[('timestamp', -1)]
+                )
+                
+                if prediction:
+                    # Check if PDF is in R2
+                    if 'pdf_r2_key' in prediction and prediction['pdf_r2_key']:
+                        if R2_STORAGE and R2_STORAGE.is_available():
+                            print(f"[PDF-ENDPOINT] Downloading from R2: {prediction['pdf_r2_key']}")
+                            
+                            pdf_binary = R2_STORAGE.download_pdf(prediction['pdf_r2_key'])
+                            
+                            if pdf_binary:
+                                pdf_buffer = BytesIO(pdf_binary)
+                                pdf_buffer.seek(0)
+                                
+                                return send_file(
+                                    pdf_buffer,
+                                    mimetype='application/pdf',
+                                    as_attachment=True,
+                                    download_name=f'clinical_report_{patient_id}.pdf'
+                                )
+                    
+                    # Check if PDF is in MongoDB
+                    elif 'pdf_report' in prediction and prediction['pdf_report']:
+                        print(f"[PDF-ENDPOINT] Downloading from MongoDB")
+                        
+                        pdf_binary = base64.b64decode(prediction['pdf_report'])
+                        pdf_buffer = BytesIO(pdf_binary)
+                        pdf_buffer.seek(0)
+                        
+                        return send_file(
+                            pdf_buffer,
+                            mimetype='application/pdf',
+                            as_attachment=True,
+                            download_name=f'clinical_report_{patient_id}.pdf'
+                        )
+            except Exception as e:
+                print(f"[PDF-ENDPOINT] Failed to download existing PDF: {e}")
+        
+        # If not found in storage, regenerate PDF
+        print(f"[PDF-ENDPOINT] Regenerating PDF for patient {patient_id}")
+        print(f"[PDF-ENDPOINT] Has WSI data: {bool(results.get('wsi_result'))}")
+        print(f"[PDF-ENDPOINT] Has Survival data: {bool(results.get('survival_analysis'))}")
+        
+        # Prepare complete result data WITH ALL SECTIONS
         complete_result = {
             'patient_id': patient_id,
             'hospital_name': session.get('hospital_name', 'Unknown Hospital'),
@@ -1014,18 +1108,34 @@ def generate_pdf_endpoint():
             'final_prediction': results.get('final_prediction', 'N/A'),
             'final_confidence': results.get('final_confidence', 0),
             'risk_level': results.get('risk_level', 'N/A'),
-            'patient_data': {}
+            'patient_data': results.get('patient_data', {}),
+            'wsi_result': results.get('wsi_result'),  # Include WSI
+            'survival_analysis': results.get('survival_analysis')  # Include Survival
         }
         
-        # Generate PDF
+        # Generate PDF in memory
         report_gen = ClinicalReportGenerator()
         pdf_path = report_gen.generate_pdf_report(complete_result)
         
-        print(f"[PDF] Generated PDF: {pdf_path}")
+        print(f"[PDF-ENDPOINT] PDF generated: {pdf_path}")
         
-        # Send file
+        # Read PDF into memory and delete local file immediately
+        with open(pdf_path, 'rb') as f:
+            pdf_binary = f.read()
+        
+        # Delete local file
+        try:
+            os.remove(pdf_path)
+            print(f"[PDF-ENDPOINT] Deleted temporary PDF: {pdf_path}")
+        except:
+            pass
+        
+        # Send from memory
+        pdf_buffer = BytesIO(pdf_binary)
+        pdf_buffer.seek(0)
+        
         return send_file(
-            pdf_path,
+            pdf_buffer,
             mimetype='application/pdf',
             as_attachment=True,
             download_name=f'clinical_report_{patient_id}.pdf'
@@ -1276,9 +1386,11 @@ def predict():
         # ═══════════════════════════════════════════════════════
         tabular_result = None
         tabular_class = 0
+        patient_data = {}  # Initialize patient_data here
         
         if TABULAR_MODEL and request.form.get('Age'):
             patient_data = {
+                'Patient_Name': request.form.get('Patient_Name', 'N/A'),
                 'Age': int(request.form.get('Age', 45)),
                 'Gender': request.form.get('Gender', 'Male'),
                 'Tobacco Use': request.form.get('Tobacco_Use', 'No'),
@@ -1666,7 +1778,171 @@ def predict():
                     traceback.print_exc()
         
         # ═══════════════════════════════════════════════════════
-        # GENERATE CLINICAL REPORT & SEND EMAIL
+        # SAVE INITIAL DOCUMENT TO MONGODB (will be updated with PDF later)
+        # ═══════════════════════════════════════════════════════
+        saved_prediction_id = None
+        if MONGODB_AVAILABLE and 'hospital_id' in session:
+            try:
+                # Store only metadata and small thumbnail (NOT full images/heatmaps/charts)
+                # This prevents MongoDB 16MB BSON limit error
+                # EXCEPTION: WSI heatmap stored as compressed/resized version
+                prediction_document = {
+                    'hospital_id': session['hospital_id'],
+                    'hospital_name': session.get('hospital_name', 'Unknown'),
+                    'patient_id': patient_id,
+                    'timestamp': datetime.now(),
+                    
+                    # Test type for category filtering
+                    'test_type': 'oral_cancer',  # oral_cancer, brain_tumor, lung_cancer
+                    
+                    # Patient data
+                    'patient_data': patient_data,  # Always include patient_data
+                    
+                    # Small thumbnail (200x200 JPEG ~10KB)
+                    'thumbnail': thumbnail_base64,
+                    
+                    # Original image resized (800x800 JPEG ~50-100KB)
+                    'original_image': original_image_base64,
+                    
+                    # Stage-1 CNN results (WITHOUT xai field to avoid base64 images)
+                    'stage1_cnn': {
+                        'model': cnn_result['model'],
+                        'prediction': cnn_result['prediction'],
+                        'confidence': cnn_result['confidence'],
+                        'confidence_level': cnn_result['confidence_level'],
+                        'uncertainty': cnn_result['uncertainty'],
+                        'preprocessing': cnn_result['preprocessing']
+                        # xai field excluded - too large for MongoDB
+                    },
+                    
+                    # Stage-2 Tabular results
+                    'stage2_tabular': tabular_result,
+                    
+                    # SHAP explanation (WITHOUT waterfall chart base64)
+                    'shap_explanation': {
+                        'contributions': shap_explanation['contributions'] if shap_explanation else [],
+                        'top_risk_factors': shap_explanation['top_risk_factors'] if shap_explanation else [],
+                        'top_protective_factors': shap_explanation['top_protective_factors'] if shap_explanation else []
+                        # waterfall_chart excluded - too large
+                    } if shap_explanation else None,
+                    
+                    # WSI Analysis - Store compressed heatmap for patient records
+                    'wsi_result': None,
+                    
+                    # Survival analysis (WITHOUT chart base64)
+                    'survival_analysis': {
+                        'survival_curve': {
+                            'median_survival_months': survival_analysis['survival_curve']['median_survival_months'],
+                            'milestones': survival_analysis['survival_curve']['milestones']
+                            # time_points and survival_probabilities excluded - chart data too large
+                        },
+                        'population_comparison': survival_analysis['population_comparison'],
+                        'assessment': survival_analysis.get('assessment', 'N/A'),
+                        'recommendations': survival_analysis['recommendations']
+                        # chart_base64 excluded - too large
+                    } if survival_analysis else None,
+                    
+                    # Final prediction
+                    'final_prediction': final_prediction,
+                    'final_confidence': final_confidence,
+                    'risk_level': risk_level,
+                    
+                    # PDF report - Will be updated after generation
+                    'pdf_report': None,
+                    'pdf_filename': None,
+                    'pdf_path': None,
+                    
+                    # Metadata
+                    'email_sent': False,
+                    'report_generated': False
+                }
+                
+                # Compress and store WSI heatmap if available
+                if wsi_result and 'heatmap_base64' in wsi_result:
+                    try:
+                        print("[MONGODB] Compressing WSI heatmap for storage...")
+                        
+                        # Decode base64 heatmap
+                        heatmap_data = wsi_result['heatmap_base64']
+                        heatmap_binary = base64.b64decode(heatmap_data)
+                        heatmap_img = Image.open(BytesIO(heatmap_binary))
+                        
+                        # Resize to much smaller size (max 300x300) to reduce size significantly
+                        max_size = 300
+                        heatmap_img.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
+                        
+                        # Compress as JPEG with very low quality
+                        buffer = BytesIO()
+                        heatmap_img.save(buffer, format='JPEG', quality=40, optimize=True)
+                        compressed_heatmap = base64.b64encode(buffer.getvalue()).decode()
+                        
+                        # Calculate size reduction
+                        original_size = len(heatmap_data) / 1024 / 1024  # MB
+                        compressed_size = len(compressed_heatmap) / 1024 / 1024  # MB
+                        
+                        print(f"[MONGODB] WSI heatmap compressed: {original_size:.2f}MB → {compressed_size:.2f}MB")
+                        
+                        # Check if still too large (> 5MB)
+                        if compressed_size > 5:
+                            print(f"[MONGODB] Compressed heatmap still too large ({compressed_size:.2f}MB), storing metadata only")
+                            prediction_document['wsi_result'] = {
+                                'dimensions': wsi_result['dimensions'],
+                                'total_tiles': wsi_result['total_tiles'],
+                                'tile_size': wsi_result.get('tile_size', 224),
+                                'cancer_tiles': wsi_result['cancer_tiles'],
+                                'normal_tiles': wsi_result['normal_tiles'],
+                                'tissue_percentage': wsi_result['tissue_percentage'],
+                                'avg_confidence': wsi_result['avg_confidence'],
+                                'grid_dimensions': wsi_result.get('grid_dimensions', [0, 0]),
+                                'heatmap_compressed': False,
+                                'heatmap_too_large': True
+                            }
+                        else:
+                            # Store compressed version with metadata
+                            prediction_document['wsi_result'] = {
+                                'dimensions': wsi_result['dimensions'],
+                                'total_tiles': wsi_result['total_tiles'],
+                                'tile_size': wsi_result.get('tile_size', 224),
+                                'cancer_tiles': wsi_result['cancer_tiles'],
+                                'normal_tiles': wsi_result['normal_tiles'],
+                                'tissue_percentage': wsi_result['tissue_percentage'],
+                                'avg_confidence': wsi_result['avg_confidence'],
+                                'grid_dimensions': wsi_result.get('grid_dimensions', [0, 0]),
+                                'heatmap_base64': compressed_heatmap,
+                                'heatmap_compressed': True,
+                                'original_size_mb': round(original_size, 2),
+                                'compressed_size_mb': round(compressed_size, 2)
+                            }
+                        
+                    except Exception as e:
+                        print(f"[MONGODB] Failed to compress WSI heatmap: {e}")
+                        # Store metadata only if compression fails
+                        prediction_document['wsi_result'] = {
+                            'dimensions': wsi_result['dimensions'],
+                            'total_tiles': wsi_result['total_tiles'],
+                            'tile_size': wsi_result.get('tile_size', 224),
+                            'cancer_tiles': wsi_result['cancer_tiles'],
+                            'normal_tiles': wsi_result['normal_tiles'],
+                            'tissue_percentage': wsi_result['tissue_percentage'],
+                            'avg_confidence': wsi_result['avg_confidence'],
+                            'grid_dimensions': wsi_result.get('grid_dimensions', [0, 0]),
+                            'heatmap_compressed': False,
+                            'compression_failed': True
+                        }
+                
+                # Insert initial document and save the ID
+                result = predictions_collection.insert_one(prediction_document)
+                saved_prediction_id = result.inserted_id
+                print(f"[MONGODB] Initial prediction saved with ID: {saved_prediction_id}")
+                print(f"[MONGODB] Patient data saved: {bool(patient_data)}")
+                
+            except Exception as e:
+                print(f"[ERROR] Failed to save to MongoDB: {e}")
+                import traceback
+                traceback.print_exc()
+        
+        # ═══════════════════════════════════════════════════════
+        # GENERATE CLINICAL REPORT & SEND EMAIL (after MongoDB save)
         # ═══════════════════════════════════════════════════════
         pdf_binary = None
         pdf_path = None
@@ -1691,7 +1967,9 @@ def predict():
                 'final_prediction': final_prediction,
                 'final_confidence': final_confidence,
                 'risk_level': risk_level,
-                'patient_data': patient_data if tabular_result else {}
+                'patient_data': patient_data,  # Always include patient_data
+                'wsi_result': wsi_result,  # Include WSI data
+                'survival_analysis': survival_analysis  # Include survival data
             }
             
             # Generate PDF report
@@ -1747,85 +2025,76 @@ def predict():
             # Don't fail the prediction if email fails
         
         # ═══════════════════════════════════════════════════════
-        # SAVE COMPLETE DATA TO MONGODB
+        # UPDATE MONGODB WITH PDF REPORT (UPLOAD TO R2)
         # ═══════════════════════════════════════════════════════
-        if MONGODB_AVAILABLE and 'hospital_id' in session:
+        if MONGODB_AVAILABLE and saved_prediction_id:
             try:
-                # Store only metadata and small thumbnail (NOT full images/heatmaps/charts)
-                # This prevents MongoDB 16MB BSON limit error
-                prediction_document = {
-                    'hospital_id': session['hospital_id'],
-                    'hospital_name': session.get('hospital_name', 'Unknown'),
-                    'patient_id': patient_id,
-                    'timestamp': datetime.now(),
+                # Check PDF size
+                pdf_size_mb = len(pdf_binary) / 1024 / 1024 if pdf_binary else 0
+                print(f"[PDF] PDF size: {pdf_size_mb:.2f}MB")
+                
+                # Upload PDF to R2 (regardless of size)
+                r2_upload_result = None
+                if R2_STORAGE and R2_STORAGE.is_available() and pdf_path:
+                    print(f"[R2] Uploading PDF to Cloudflare R2...")
+                    r2_upload_result = R2_STORAGE.upload_pdf(pdf_path, patient_id)
                     
-                    # Test type for category filtering
-                    'test_type': 'oral_cancer',  # oral_cancer, brain_tumor, lung_cancer
-                    
-                    # Patient data
-                    'patient_data': patient_data if tabular_result else {},
-                    
-                    # Small thumbnail (200x200 JPEG ~10KB)
-                    'thumbnail': thumbnail_base64,
-                    
-                    # Original image resized (800x800 JPEG ~50-100KB)
-                    'original_image': original_image_base64,
-                    
-                    # Stage-1 CNN results (WITHOUT xai field to avoid base64 images)
-                    'stage1_cnn': {
-                        'model': cnn_result['model'],
-                        'prediction': cnn_result['prediction'],
-                        'confidence': cnn_result['confidence'],
-                        'confidence_level': cnn_result['confidence_level'],
-                        'uncertainty': cnn_result['uncertainty'],
-                        'preprocessing': cnn_result['preprocessing']
-                        # xai field excluded - too large for MongoDB
-                    },
-                    
-                    # Stage-2 Tabular results
-                    'stage2_tabular': tabular_result,
-                    
-                    # SHAP explanation (WITHOUT waterfall chart base64)
-                    'shap_explanation': {
-                        'contributions': shap_explanation['contributions'] if shap_explanation else [],
-                        'top_risk_factors': shap_explanation['top_risk_factors'] if shap_explanation else [],
-                        'top_protective_factors': shap_explanation['top_protective_factors'] if shap_explanation else []
-                        # waterfall_chart excluded - too large
-                    } if shap_explanation else None,
-                    
-                    # Survival analysis (WITHOUT chart base64)
-                    'survival_analysis': {
-                        'survival_curve': {
-                            'median_survival_months': survival_analysis['survival_curve']['median_survival_months'],
-                            'milestones': survival_analysis['survival_curve']['milestones']
-                            # time_points and survival_probabilities excluded - chart data too large
-                        },
-                        'population_comparison': survival_analysis['population_comparison'],
-                        'assessment': survival_analysis.get('assessment', 'N/A'),  # Use .get() to avoid KeyError
-                        'recommendations': survival_analysis['recommendations']
-                        # chart_base64 excluded - too large
-                    } if survival_analysis else None,
-                    
-                    # Final prediction
-                    'final_prediction': final_prediction,
-                    'final_confidence': final_confidence,
-                    'risk_level': risk_level,
-                    
-                    # PDF report reference (store file path, not binary)
-                    'pdf_path': pdf_path,
-                    'pdf_filename': f'clinical_report_{patient_id}.pdf',
-                    
-                    # Metadata
+                    if r2_upload_result['success']:
+                        print(f"[R2] ✓ PDF uploaded successfully: {r2_upload_result['key']}")
+                        print(f"[R2] URL: {r2_upload_result['url']}")
+                    else:
+                        print(f"[R2] ✗ Upload failed: {r2_upload_result.get('error')}")
+                
+                # Prepare update data
+                update_data = {
                     'email_sent': True,
                     'report_generated': pdf_path is not None
                 }
                 
-                result = predictions_collection.insert_one(prediction_document)
-                print(f"[MONGODB] Prediction saved with ID: {result.inserted_id}")
-                print(f"[MONGODB] Stored: Metadata only (thumbnail, results, no large images)")
+                # If R2 upload successful, store R2 URL and key
+                if r2_upload_result and r2_upload_result['success']:
+                    update_data['pdf_r2_url'] = r2_upload_result['url']
+                    update_data['pdf_r2_key'] = r2_upload_result['key']
+                    update_data['pdf_size_mb'] = r2_upload_result['size_mb']
+                    update_data['pdf_storage'] = 'r2'
+                    update_data['pdf_filename'] = f'clinical_report_{patient_id}.pdf'
+                    print(f"[MONGODB] Storing R2 URL in MongoDB (PDF not stored in DB)")
+                    
+                    # DELETE LOCAL PDF AFTER SUCCESSFUL R2 UPLOAD
+                    try:
+                        if pdf_path and os.path.exists(pdf_path):
+                            os.remove(pdf_path)
+                            print(f"[CLEANUP] ✓ Deleted local PDF: {pdf_path}")
+                        if json_path and os.path.exists(json_path):
+                            os.remove(json_path)
+                            print(f"[CLEANUP] ✓ Deleted local JSON: {json_path}")
+                    except Exception as cleanup_error:
+                        print(f"[CLEANUP] ⚠ Failed to delete local files: {cleanup_error}")
+                else:
+                    # Fallback: Store in MongoDB if R2 fails AND PDF is small enough
+                    if pdf_binary and pdf_size_mb < 5:
+                        update_data['pdf_report'] = pdf_binary
+                        update_data['pdf_filename'] = f'clinical_report_{patient_id}.pdf'
+                        update_data['pdf_storage'] = 'mongodb'
+                        print(f"[MONGODB] Storing PDF in MongoDB ({pdf_size_mb:.2f}MB)")
+                    else:
+                        # Store local path only
+                        update_data['pdf_path'] = pdf_path
+                        update_data['pdf_filename'] = f'clinical_report_{patient_id}.pdf'
+                        update_data['pdf_storage'] = 'local'
+                        print(f"[MONGODB] PDF too large ({pdf_size_mb:.2f}MB), storing path only")
+                
+                # Update the existing document
+                predictions_collection.update_one(
+                    {'_id': saved_prediction_id},
+                    {'$set': update_data}
+                )
+                
+                print(f"[MONGODB] ✓ Updated prediction {saved_prediction_id}")
+                print(f"[MONGODB] Storage method: {update_data.get('pdf_storage', 'none')}")
                 
             except Exception as e:
-                print(f"[ERROR] Failed to save to MongoDB: {e}")
+                print(f"[ERROR] Failed to update MongoDB: {e}")
                 import traceback
                 traceback.print_exc()
         
@@ -1856,7 +2125,7 @@ if __name__ == '__main__':
     debug = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
     
     print(f"\n{'='*60}")
-    print(f"🚀 FedFusionNet++ Server Starting...")
+    print(f"🚀 NeuroPlex Server Starting...")
     print(f"{'='*60}")
     print(f"📍 Host: {host}")
     print(f"🔌 Port: {port}")
@@ -1866,6 +2135,7 @@ if __name__ == '__main__':
     print(f"📊 Tabular Model: {'Loaded' if TABULAR_MODEL else 'Not Loaded'}")
     print(f"💬 VLM Service: {'Available' if VLM_SERVICE and VLM_SERVICE.is_available() else 'Not Available'}")
     print(f"🗺️  WSI Processor: {'Available' if WSI_PROCESSOR else 'Not Available'}")
+    print(f"☁️  R2 Storage: {'Connected' if R2_STORAGE and R2_STORAGE.is_available() else 'Not Available'}")
     print(f"{'='*60}")
     print(f"\n✅ Server ready! Access at: http://{host if host != '0.0.0.0' else 'localhost'}:{port}")
     print(f"\n")

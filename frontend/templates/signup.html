@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register | FedFusionNet++</title>
+    <title>Register | NeuroPlex</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
@@ -34,10 +34,11 @@
 <body class="p-4">
     <div class="max-w-4xl mx-auto py-8">
         <div class="text-center mb-8 text-white">
+            <img src="{{ url_for('static', filename='splash.png') }}" alt="NeuroPlex" class="w-48 mx-auto mb-4">
             <h1 class="text-5xl font-extrabold mb-2">
-                <i class="fas fa-hospital-alt"></i> Hospital Registration
+                Hospital Registration
             </h1>
-            <p class="text-xl">Join the FedFusionNet++ Network</p>
+            <p class="text-xl">Join the NeuroPlex Network</p>
         </div>
         
         <div class="glass-card p-10">
@@ -251,7 +252,7 @@
                 // Method 1: Nominatim with better query
                 const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&addressdetails=1`;
                 const response1 = await fetch(nominatimUrl, {
-                    headers: { 'User-Agent': 'FedFusionNet++ Hospital Registration' }
+                    headers: { 'User-Agent': 'NeuroPlex Hospital Registration' }
                 });
                 const data1 = await response1.json();
                 
@@ -265,7 +266,7 @@
                     if (cityMatch) {
                         const cityUrl = `https://nominatim.openstreetmap.org/search?format=json&city=${cityMatch[0]}&country=India&limit=1`;
                         const response2 = await fetch(cityUrl, {
-                            headers: { 'User-Agent': 'FedFusionNet++ Hospital Registration' }
+                            headers: { 'User-Agent': 'NeuroPlex Hospital Registration' }
                         });
                         const data2 = await response2.json();
                         

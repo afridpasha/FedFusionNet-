@@ -1,5 +1,5 @@
 """
-FedFusionNet++ Privacy Module
+NeuroPlex Privacy Module
 Implements privacy-preserving mechanisms for medical diagnosis
 """
 
@@ -92,7 +92,7 @@ class DataAnonymizer:
     Remove personally identifiable information (PII)
     """
     
-    def __init__(self, salt='fedfusionnet_salt_2024'):
+    def __init__(self, salt='neuroplex_salt_2024'):
         self.salt = salt
     
     def anonymize_patient_id(self, patient_id):
@@ -379,7 +379,7 @@ class InputValidator:
 
 class PrivacyPipeline:
     """
-    Complete privacy-preserving pipeline for FedFusionNet++
+    Complete privacy-preserving pipeline for NeuroPlex
     """
     
     def __init__(self, max_queries_per_patient=10):
@@ -434,7 +434,7 @@ class PrivacyPipeline:
             patient_id=patient_id,  # Already anonymized
             prediction_type='oral_cancer_detection',
             privacy_params=result['privacy_guarantee'],
-            metadata={'model': 'FedFusionNet++ v2.0', 'accuracy_preserved': True}
+            metadata={'model': 'NeuroPlex v2.0', 'accuracy_preserved': True}
         )
         
         return result
@@ -457,7 +457,7 @@ class PrivacyPipeline:
 
 if __name__ == '__main__':
     print("="*80)
-    print("FEDFUSIONNET++ PRIVACY MODULE (ZERO ACCURACY LOSS)")
+    print("NeuroPlex PRIVACY MODULE (ZERO ACCURACY LOSS)")
     print("="*80)
     
     # Initialize privacy pipeline

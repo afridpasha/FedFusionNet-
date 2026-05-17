@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Login | FedFusionNet++</title>
+    <title>Login | NeuroPlex</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
@@ -62,17 +62,17 @@
     <div class="w-full max-w-6xl grid md:grid-cols-2 gap-6 md:gap-8 items-center">
         <!-- Hero Section - Hidden on mobile, visible on tablet+ -->
         <div class="hidden md:block text-white space-y-4 md:space-y-6 p-4 md:p-8">
-            <i class="fas fa-hospital hero-icon text-6xl md:text-8xl mb-4 md:mb-6"></i>
-            <h1 class="hero-title text-4xl md:text-6xl font-extrabold">FedFusionNet<span class="text-yellow-300">++</span></h1>
-            <p class="hero-subtitle text-xl md:text-2xl font-light">Privacy-Preserving AI for Healthcare</p>
+            <img src="{{ url_for('static', filename='splash.png') }}" alt="NeuroPlex" class="w-48 md:w-64 mb-4 md:mb-6">
+            <h1 class="hero-title text-4xl md:text-6xl font-extrabold">NeuroPlex</h1>
+            <p class="hero-subtitle text-xl md:text-2xl font-light">AI-Powered Medical Diagnostics</p>
         </div>
         
         <!-- Login Card -->
         <div class="glass-card p-6 sm:p-8 md:p-10 w-full">
             <!-- Mobile Hero - Only visible on mobile -->
             <div class="md:hidden text-center mb-6">
-                <i class="fas fa-hospital text-purple-600 text-5xl mb-3"></i>
-                <h1 class="text-3xl font-extrabold text-gray-800">FedFusionNet<span class="text-purple-600">++</span></h1>
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="NeuroPlex" class="w-32 mx-auto mb-3">
+                <h1 class="text-3xl font-extrabold text-gray-800">NeuroPlex</h1>
             </div>
             
             <div class="text-center mb-6 md:mb-8">

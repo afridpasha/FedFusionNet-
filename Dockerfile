@@ -1,4 +1,4 @@
-# FedFusionNet++ Docker Image for Hugging Face Spaces
+# NeuroPlex Docker Image for Hugging Face Spaces
 # Base image with Python 3.10
 FROM python:3.10-slim
 

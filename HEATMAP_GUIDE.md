@@ -1,4 +1,4 @@
-# 🔥 Understanding the 3 Heatmaps in FedFusionNet++
+# 🔥 Understanding the 3 Heatmaps in NeuroPlex
 
 ## 📊 Overview: Why 3 Different Heatmaps?
 

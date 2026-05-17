@@ -1,5 +1,5 @@
 """
-SHAP Explainability Module for FedFusionNet++
+SHAP Explainability Module for NeuroPlex
 Provides risk factor contribution analysis
 """
 

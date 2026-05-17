@@ -1,5 +1,5 @@
 """
-Temporal Comparison Module for FedFusionNet++
+Temporal Comparison Module for NeuroPlex
 Compares current scan with previous scans to track progression
 """
 

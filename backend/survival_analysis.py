@@ -1,5 +1,5 @@
 """
-Survival Analysis Module for FedFusionNet++
+Survival Analysis Module for NeuroPlex
 Generates Kaplan-Meier curves and survival predictions
 """
 
@@ -320,17 +320,26 @@ class SurvivalAnalyzer:
     
     def generate_survival_report(self, cancer_stage, patient_data):
         """
-        Generate complete survival analysis report
+        Generate complete survival analysis report WITH KAPLAN-MEIER CURVE IMAGE
         
         Args:
             cancer_stage: Cancer stage (0-4)
             patient_data: Dictionary of patient features
             
         Returns:
-            Complete survival report dictionary
+            Complete survival report dictionary with curve visualization
         """
         # Calculate survival curve
         curve = self.calculate_survival_curve(cancer_stage, patient_data)
+        
+        # Generate Kaplan-Meier curve visualization
+        print("[SURVIVAL] Attempting to generate Kaplan-Meier curve image...")
+        curve_image_base64 = self._generate_km_curve_image(curve, cancer_stage)
+        if curve_image_base64:
+            curve['curve_base64'] = curve_image_base64
+            print(f"[SURVIVAL] Kaplan-Meier curve added to survival data (size: {len(curve_image_base64)} bytes)")
+        else:
+            print("[SURVIVAL] WARNING: Failed to generate Kaplan-Meier curve image")
         
         # Compare with population
         comparison = self.compare_with_population(curve, cancer_stage)
@@ -349,6 +358,98 @@ class SurvivalAnalyzer:
             'recommendations': recommendations,
             'generated_at': datetime.now().isoformat()
         }
+    
+    def _generate_km_curve_image(self, curve_data, cancer_stage):
+        """
+        Generate Kaplan-Meier survival curve visualization
+        
+        Args:
+            curve_data: Survival curve data dictionary
+            cancer_stage: Cancer stage
+            
+        Returns:
+            Base64 encoded PNG image
+        """
+        try:
+            print("[SURVIVAL-KM] Starting curve generation...")
+            
+            import matplotlib
+            matplotlib.use('Agg')  # Non-interactive backend
+            import matplotlib.pyplot as plt
+            import base64
+            from io import BytesIO
+            
+            print("[SURVIVAL-KM] Matplotlib imported successfully")
+            
+            # Create figure
+            fig, ax = plt.subplots(figsize=(10, 6), dpi=100)
+            print("[SURVIVAL-KM] Figure created")
+            
+            # Convert months to years for x-axis
+            time_years = [t / 12 for t in curve_data['time_points']]
+            print(f"[SURVIVAL-KM] Time points: {len(time_years)} points")
+            
+            # Plot survival curve
+            ax.plot(time_years, curve_data['survival_probabilities'], 
+                   color='#2563eb', linewidth=2.5, label='Survival Probability')
+            print("[SURVIVAL-KM] Main curve plotted")
+            
+            # Plot confidence interval
+            ax.fill_between(time_years, 
+                           curve_data['lower_ci'], 
+                           curve_data['upper_ci'],
+                           color='#2563eb', alpha=0.2, label='95% Confidence Interval')
+            print("[SURVIVAL-KM] Confidence interval plotted")
+            
+            # Add milestone markers
+            milestones_years = [1, 3, 5, 10]
+            milestone_keys = ['1_year', '3_year', '5_year', '10_year']
+            for year, key in zip(milestones_years, milestone_keys):
+                prob = curve_data['milestones'][key]
+                ax.plot(year, prob, 'o', color='#dc2626', markersize=8, zorder=5)
+                ax.text(year, prob + 0.05, f'{prob*100:.1f}%', 
+                       ha='center', va='bottom', fontsize=9, fontweight='bold')
+            print("[SURVIVAL-KM] Milestones added")
+            
+            # Styling
+            ax.set_xlabel('Time (Years)', fontsize=12, fontweight='bold')
+            ax.set_ylabel('Survival Probability', fontsize=12, fontweight='bold')
+            ax.set_title(f'Kaplan-Meier Survival Curve - Stage {cancer_stage}', 
+                        fontsize=14, fontweight='bold', pad=15)
+            
+            ax.set_xlim(0, 10)
+            ax.set_ylim(0, 1.05)
+            ax.grid(True, alpha=0.3, linestyle='--')
+            ax.legend(loc='lower left', fontsize=10, framealpha=0.9)
+            
+            # Format y-axis as percentage
+            ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y*100:.0f}%'))
+            print("[SURVIVAL-KM] Styling applied")
+            
+            # Tight layout
+            plt.tight_layout()
+            
+            # Convert to base64
+            buffer = BytesIO()
+            plt.savefig(buffer, format='PNG', dpi=100, bbox_inches='tight')
+            plt.close(fig)
+            print("[SURVIVAL-KM] Figure saved to buffer")
+            
+            buffer.seek(0)
+            image_base64 = base64.b64encode(buffer.getvalue()).decode()
+            
+            print(f"[SURVIVAL-KM] ✓ Kaplan-Meier curve image generated successfully ({len(image_base64)} bytes)")
+            return image_base64
+            
+        except ImportError as e:
+            print(f"[SURVIVAL-KM] ERROR: Missing dependency - {e}")
+            print("[SURVIVAL-KM] Install matplotlib: pip install matplotlib")
+            return None
+        except Exception as e:
+            print(f"[SURVIVAL-KM] ERROR: Failed to generate curve - {e}")
+            import traceback
+            traceback.print_exc()
+            return None
     
     def _generate_recommendations(self, cancer_stage, patient_data, risk_factor):
         """

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prediction | FedFusionNet++</title>
+    <title>Prediction | NeuroPlex</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -361,18 +361,34 @@
                 const data = await response.json();
                 
                 if (data.success) {
+                    console.log('✅ Prediction successful, storing data...');
+                    
                     // Store patient ID
                     sessionStorage.setItem('patientId', document.getElementById('patientId').value);
                     
                     // Use IndexedDB for large data (supports 50MB+)
                     // This avoids sessionStorage quota exceeded error
-                    storePredictionInIndexedDB(data).then(() => {
+                    try {
+                        await storePredictionInIndexedDB(data);
+                        console.log('✅ Data stored, redirecting to results...');
+                        
                         // Redirect to results page
                         window.location.href = '/result';
-                    }).catch(error => {
-                        console.error('IndexedDB storage failed:', error);
-                        alert('Error storing results: ' + error.message);
-                    });
+                    } catch (error) {
+                        console.error('❌ IndexedDB storage failed:', error);
+                        
+                        // Fallback: Try sessionStorage (may fail for large data)
+                        try {
+                            sessionStorage.setItem('predictionResult', JSON.stringify(data));
+                            console.log('✅ Fallback: Stored in sessionStorage');
+                            window.location.href = '/result';
+                        } catch (storageError) {
+                            console.error('❌ SessionStorage also failed:', storageError);
+                            alert('Results are ready but storage failed. Redirecting anyway...');
+                            // Redirect anyway - result page will fetch from backend
+                            window.location.href = '/result';
+                        }
+                    }
                 } else {
                     alert('Error: ' + data.message);
                 }
@@ -387,40 +403,70 @@
         // ============================================
         // INDEXEDDB STORAGE (for large data)
         // ============================================
-        function storePredictionInIndexedDB(data) {
+        async function storePredictionInIndexedDB(data) {
             return new Promise((resolve, reject) => {
-                // Open IndexedDB
-                const request = indexedDB.open('FedFusionNetDB', 1);
+                console.log('[IndexedDB] Opening database...');
                 
-                request.onerror = () => reject(new Error('Failed to open IndexedDB'));
+                // Set timeout to prevent hanging
+                const timeout = setTimeout(() => {
+                    reject(new Error('IndexedDB operation timed out'));
+                }, 5000); // 5 second timeout
+                
+                // Open IndexedDB
+                const request = indexedDB.open('NeuroplexDB', 1);
+                
+                request.onerror = () => {
+                    clearTimeout(timeout);
+                    console.error('[IndexedDB] Failed to open database');
+                    reject(new Error('Failed to open IndexedDB'));
+                };
                 
                 request.onupgradeneeded = (event) => {
+                    console.log('[IndexedDB] Upgrading database schema...');
                     const db = event.target.result;
                     if (!db.objectStoreNames.contains('predictions')) {
                         db.createObjectStore('predictions', { keyPath: 'id' });
+                        console.log('[IndexedDB] Created predictions store');
                     }
                 };
                 
                 request.onsuccess = (event) => {
+                    console.log('[IndexedDB] Database opened successfully');
                     const db = event.target.result;
-                    const transaction = db.transaction(['predictions'], 'readwrite');
-                    const store = transaction.objectStore('predictions');
                     
-                    // Store complete data with timestamp
-                    const predictionData = {
-                        id: 'latest',
-                        timestamp: new Date().toISOString(),
-                        data: data  // Store EVERYTHING including XAI heatmaps
-                    };
-                    
-                    const putRequest = store.put(predictionData);
-                    
-                    putRequest.onsuccess = () => {
-                        console.log('✅ Prediction stored in IndexedDB (with XAI heatmaps)');
-                        resolve();
-                    };
-                    
-                    putRequest.onerror = () => reject(new Error('Failed to store in IndexedDB'));
+                    try {
+                        const transaction = db.transaction(['predictions'], 'readwrite');
+                        const store = transaction.objectStore('predictions');
+                        
+                        // Store complete data with timestamp
+                        const predictionData = {
+                            id: 'latest',
+                            timestamp: new Date().toISOString(),
+                            data: data  // Store EVERYTHING including XAI heatmaps
+                        };
+                        
+                        console.log('[IndexedDB] Storing prediction data...');
+                        const putRequest = store.put(predictionData);
+                        
+                        putRequest.onsuccess = () => {
+                            clearTimeout(timeout);
+                            console.log('✅ [IndexedDB] Prediction stored successfully');
+                            db.close();
+                            resolve();
+                        };
+                        
+                        putRequest.onerror = (error) => {
+                            clearTimeout(timeout);
+                            console.error('[IndexedDB] Failed to store data:', error);
+                            db.close();
+                            reject(new Error('Failed to store in IndexedDB'));
+                        };
+                    } catch (error) {
+                        clearTimeout(timeout);
+                        console.error('[IndexedDB] Transaction error:', error);
+                        db.close();
+                        reject(error);
+                    }
                 };
             });
         }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patient History | FedFusionNet++</title>
+    <title>Patient History | NeuroPlex</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -68,11 +68,13 @@
         <div class="max-w-7xl mx-auto px-4 py-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-4">
-                    <i class="fas fa-hospital text-white text-3xl"></i>
-                    <div>
-                        <h1 class="text-white text-2xl font-bold">FedFusionNet++</h1>
-                        <p class="text-white text-sm opacity-80">{{ hospital_name }}</p>
-                    </div>
+                    <a href="/dashboard" class="flex items-center space-x-2 hover:opacity-80 transition">
+                        <img src="{{ url_for('static', filename='logo.png') }}" alt="NeuroPlex" class="h-12 w-12">
+                        <div>
+                            <h1 class="text-white text-2xl font-bold">NeuroPlex</h1>
+                            <p class="text-white text-sm opacity-80">{{ hospital_name }}</p>
+                        </div>
+                    </a>
                 </div>
                 
                 <!-- Desktop Menu -->
@@ -139,6 +141,13 @@
     </script>
     
     <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Back Button -->
+        <div class="mb-6">
+            <a href="/dashboard" class="inline-flex items-center bg-white hover:bg-gray-100 text-gray-800 px-6 py-3 rounded-lg font-semibold transition shadow-lg">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+            </a>
+        </div>
+        
         <!-- Category Tabs -->
         <div class="glass-card p-4 mb-6">
             <div class="flex items-center justify-center space-x-4">
@@ -829,25 +838,69 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Downloading...';
             btn.disabled = true;
             
-            fetch(`/api/download-pdf/${predictionId}`)
+            console.log(`[PDF-DOWNLOAD] Starting download for prediction: ${predictionId}`);
+            
+            fetch(`/api/download-pdf/${predictionId}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/pdf'
+                }
+            })
                 .then(response => {
+                    console.log(`[PDF-DOWNLOAD] Response status: ${response.status}`);
+                    console.log(`[PDF-DOWNLOAD] Response headers:`, response.headers);
+                    
                     if (!response.ok) {
-                        throw new Error('Failed to download PDF');
+                        return response.json().then(err => {
+                            throw new Error(err.message || 'Failed to download PDF');
+                        }).catch(() => {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        });
                     }
+                    
+                    // Check content type
+                    const contentType = response.headers.get('content-type');
+                    console.log(`[PDF-DOWNLOAD] Content-Type: ${contentType}`);
+                    
+                    if (!contentType || !contentType.includes('application/pdf')) {
+                        throw new Error('Response is not a PDF file');
+                    }
+                    
                     return response.blob();
                 })
                 .then(blob => {
+                    console.log(`[PDF-DOWNLOAD] Received blob, size: ${blob.size} bytes`);
+                    
+                    if (blob.size === 0) {
+                        throw new Error('PDF file is empty');
+                    }
+                    
+                    // Create download link
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
                     a.download = `clinical_report_${predictionId}.pdf`;
+                    document.body.appendChild(a);
                     a.click();
+                    document.body.removeChild(a);
                     URL.revokeObjectURL(url);
                     
-                    btn.innerHTML = originalHTML;
-                    btn.disabled = false;
+                    console.log(`[PDF-DOWNLOAD] ✅ Download successful`);
+                    
+                    // Show success message
+                    btn.innerHTML = '<i class="fas fa-check mr-2"></i>Downloaded!';
+                    btn.classList.remove('bg-red-600', 'hover:bg-red-700');
+                    btn.classList.add('bg-green-600', 'hover:bg-green-700');
+                    
+                    setTimeout(() => {
+                        btn.innerHTML = originalHTML;
+                        btn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                        btn.classList.add('bg-red-600', 'hover:bg-red-700');
+                        btn.disabled = false;
+                    }, 2000);
                 })
                 .catch(error => {
+                    console.error('[PDF-DOWNLOAD] ❌ Error:', error);
                     alert('Error downloading PDF: ' + error.message);
                     btn.innerHTML = originalHTML;
                     btn.disabled = false;
@@ -1326,3 +1379,4 @@
     </script>
 </body>
 </html>
+
